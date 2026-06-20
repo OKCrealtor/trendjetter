@@ -5,3 +5,4 @@ dist/
 *.db
 data.db
 .DS_Store
+api/index.ts

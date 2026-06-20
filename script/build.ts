@@ -6,6 +6,7 @@ import { rm, readFile } from "node:fs/promises";
 // which helps cold start times
 const allowlist = [
   "@anthropic-ai/sdk",
+  "@supabase/supabase-js",
   "@google/generative-ai",
   "axios",
   "cors",
@@ -64,13 +65,14 @@ async function buildAll() {
     entryPoints: ["api/index.ts"],
     platform: "node",
     bundle: true,
-    format: "esm",
+    format: "cjs",
     outfile: "api/index.js",
     define: {
       "process.env.NODE_ENV": '"production"',
     },
     minify: true,
-    external: externals,
+    // Bundle @anthropic-ai/sdk and @supabase/supabase-js — pure JS, no native binaries
+    external: externals.filter(e => e !== '@anthropic-ai/sdk' && e !== '@supabase/supabase-js'),
     logLevel: "info",
   });
 }
