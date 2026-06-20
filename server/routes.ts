@@ -86,7 +86,7 @@ trendDirection must be one of: "rising", "stable", "declining"
 All tags start with #. Local tags must reference ${location} geography. Use real hashtags people actually use.`;
 
   const message = await anthropic.messages.create({
-    model: 'claude_haiku_4_5',
+    model: 'claude-haiku-4-5',
     max_tokens: 4096,
     messages: [{ role: 'user', content: prompt }],
   });
@@ -134,7 +134,7 @@ Return ONLY valid JSON (no markdown):
 Include 12-15 hashtags relevant to topic, industry, and ${platform}. Include 7 SEO keywords.`;
 
   const message = await anthropic.messages.create({
-    model: 'claude_haiku_4_5',
+    model: 'claude-haiku-4-5',
     max_tokens: 1024,
     messages: [{ role: 'user', content: prompt }],
   });
@@ -274,34 +274,6 @@ function postCountForGroup(group: string): string {
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
   if (count >= 1_000) return `${(count / 1_000).toFixed(0)}K`;
   return `${count}`;
-}
-
-interface GenerateInput {
-  locationCity?: string;
-  locationState?: string;
-  industry: string;
-  contentTopic: string;
-  platform: string;
-  goal: string;
-}
-
-interface GeneratedHashtag {
-  tag: string;
-  groupType: string;
-  popularityScore: number;
-  competitionScore: number;
-  opportunityScore: number;
-  localRelevanceScore: number;
-  overallScore: number;
-  estimatedPosts: string;
-  trendDirection: string;
-}
-
-interface GenerateResult {
-  hashtags: GeneratedHashtag[];
-  strategyNotes: string;
-  platformTip: string;
-  postingRecommendation: string;
 }
 
 function generateHashtags(input: GenerateInput): GenerateResult {
