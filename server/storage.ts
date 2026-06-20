@@ -15,7 +15,9 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import { eq, desc, and } from 'drizzle-orm';
 
-const sqlite = new Database('data.db');
+// In Vercel Lambda, filesystem is read-only except /tmp
+const dbPath = process.env.VERCEL ? '/tmp/data.db' : 'data.db';
+const sqlite = new Database(dbPath);
 sqlite.pragma('journal_mode = WAL');
 
 export const db = drizzle(sqlite);
