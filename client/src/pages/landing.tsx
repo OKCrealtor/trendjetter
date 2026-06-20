@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import TrendJetterLogo from '@/components/TrendJetterLogo';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { Hash, Check, Zap, TrendingUp, MapPin, Target, Sparkles, Crown, ChevronDown } from 'lucide-react';
 
 // ─── Lenis smooth scroll ──────────────────────────────────────────────────────
@@ -193,10 +193,11 @@ function FadeCard({ children, delay = 0, highlight = false, tilt = true, style: 
 }
 
 // ─── Magnetic button ─────────────────────────────────────────────────────────
-function MagneticBtn({ children, className, style: extraStyle, href, 'data-testid': testId }: {
-  children: React.ReactNode; className?: string; style?: React.CSSProperties; href?: string; 'data-testid'?: string;
+function MagneticBtn({ children, className, style: extraStyle, href, onClick, 'data-testid': testId }: {
+  children: React.ReactNode; className?: string; style?: React.CSSProperties; href?: string; onClick?: () => void; 'data-testid'?: string;
 }) {
-  const ref = useRef<HTMLAnchorElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
+  const [, navigate] = useLocation();
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
   const onMouseMove = useCallback((e: React.MouseEvent) => {
@@ -210,12 +211,20 @@ function MagneticBtn({ children, className, style: extraStyle, href, 'data-testi
 
   const onMouseLeave = useCallback(() => setOffset({ x: 0, y: 0 }), []);
 
+  const handleClick = useCallback(() => {
+    if (onClick) { onClick(); return; }
+    if (href) navigate(href);
+  }, [href, onClick, navigate]);
+
   return (
-    <a
+    <div
       ref={ref}
-      href={href}
+      role="button"
+      tabIndex={0}
       data-testid={testId}
       className={`no-underline ${className ?? ''}`}
+      onClick={handleClick}
+      onKeyDown={e => e.key === 'Enter' && handleClick()}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
       style={{
@@ -227,10 +236,11 @@ function MagneticBtn({ children, className, style: extraStyle, href, 'data-testi
         display: 'inline-flex',
         alignItems: 'center',
         gap: 6,
+        cursor: 'pointer',
       }}
     >
       {children}
-    </a>
+    </div>
   );
 }
 
@@ -329,14 +339,12 @@ function PricingCard({ plan, delay = 0 }: { plan: typeof PLANS[number]; delay?: 
           </div>
         ))}
       </div>
-      <Link href="/generator">
-        <a className="no-underline">
-          <button
-            data-testid={`pricing-cta-${plan.name.toLowerCase()}`}
-            className={`w-full h-10 rounded-lg text-[13px] font-medium transition-all cursor-pointer ${plan.highlight ? 'btn-primary' : 'btn-secondary'}`}
-          >{plan.cta}</button>
-        </a>
-      </Link>
+      <MagneticBtn
+        href="/generator"
+        data-testid={`pricing-cta-${plan.name.toLowerCase()}`}
+        className={`w-full h-10 rounded-lg text-[13px] font-medium transition-all ${plan.highlight ? 'btn-primary' : 'btn-secondary'}`}
+        style={{ justifyContent: 'center' }}
+      >{plan.cta}</MagneticBtn>
     </FadeCard>
   );
 }
@@ -424,10 +432,8 @@ export default function LandingPage() {
                 onMouseLeave={e => (e.currentTarget.style.color='#52525B')}
               >{label}</a>
             ))}
-            <Link href="/dashboard"><a style={{ fontSize: 14, color: '#52525B', textDecoration: 'none' }}>Sign in</a></Link>
-            <Link href="/generator">
-              <a className="no-underline btn-primary" data-testid="hero-cta-nav">Try free</a>
-            </Link>
+            <MagneticBtn href="/dashboard" style={{ fontSize: 15, color: '#52525B' }}>Sign in</MagneticBtn>
+            <MagneticBtn href="/generator" className="btn-primary" style={{ fontSize: 14, padding: '8px 18px' }} data-testid="hero-cta-nav">Try free</MagneticBtn>
           </div>
         </nav>
 
@@ -461,11 +467,9 @@ export default function LandingPage() {
             <div className="hero-fade-4" style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 64,
             }}>
-              <Link href="/generator">
-                <MagneticBtn className="btn-primary" style={{ fontSize: 15, padding: '12px 28px' }} data-testid="hero-cta-primary">
-                  <Hash size={15} /> Try it free
-                </MagneticBtn>
-              </Link>
+              <MagneticBtn href="/generator" className="btn-primary" style={{ fontSize: 15, padding: '12px 28px' }} data-testid="hero-cta-primary">
+                <Hash size={15} /> Try it free
+              </MagneticBtn>
               <a href="#features"
                 onClick={e => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }}
                 className="no-underline btn-secondary" style={{ fontSize: 15, padding: '12px 28px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -606,11 +610,9 @@ export default function LandingPage() {
               Ready to use real intelligence?
             </h2>
             <p style={{ fontSize: 16, color: '#71717A', marginBottom: 32, lineHeight: 1.65 }}>Stop guessing which hashtags work. TrendJetter scores, ranks, and tells you exactly what to post.</p>
-            <Link href="/generator">
-              <MagneticBtn className="btn-primary" style={{ fontSize: 15, padding: '12px 32px' }} data-testid="final-cta">
-                <Hash size={16} /> Start for free
-              </MagneticBtn>
-            </Link>
+            <MagneticBtn href="/generator" className="btn-primary" style={{ fontSize: 15, padding: '12px 32px' }} data-testid="final-cta">
+              <Hash size={16} /> Start for free
+            </MagneticBtn>
             <p style={{ fontSize: 12, color: '#A1A1AA', marginTop: 16 }}>No credit card required · 5 searches free every month</p>
           </div>
         </SpotlightSection>
