@@ -27,16 +27,29 @@ function verdictLabel(s: number) {
 }
 
 const PLATFORMS = ['All', 'Instagram', 'TikTok', 'LinkedIn', 'YouTube', 'X', 'Facebook'];
-const INDUSTRIES = ['All', 'Fitness', 'Food & Beverage', 'Beauty', 'Fashion', 'Travel', 'Photography', 'Technology', 'Marketing', 'Music', 'Gaming', 'Real Estate'];
+const INDUSTRIES = ['All', 'Fitness', 'Food & Beverage', 'Beauty', 'Travel', 'Real Estate', 'Technology'];
+
+function velocityColor(v: string) {
+  if (v === 'rising') return 'text-green-600';
+  if (v === 'exploding') return 'text-emerald-500';
+  if (v === 'stable') return 'text-[#0891B2]';
+  return 'text-[#A1A1AA]';
+}
+function velocityLabel(v: string) {
+  if (v === 'rising') return '↑ Rising';
+  if (v === 'exploding') return '🔥 Exploding';
+  if (v === 'stable') return '→ Stable';
+  return '↓ Declining';
+}
 
 function TrendCard({ trend }: { trend: TrendRecord }) {
-  const score = trend.opportunityScore ?? 0;
-  const growth = trend.growthRate ?? 0;
+  const score = trend.trendScore ?? 0;
+  const velocity = trend.velocity ?? 'stable';
   return (
     <TiltCard intensity={10}>
     <div className="bento-tile group cursor-pointer" data-testid={`trend-${trend.id}`}>
       <div className="flex items-start justify-between mb-3">
-        <span className="font-mono text-[13px] font-medium text-[#111111]">{trend.hashtag}</span>
+        <span className="font-mono text-[13px] font-medium text-[#111111]">{trend.tag}</span>
         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${verdictClass(score)}`}>
           {verdictLabel(score)}
         </span>
@@ -45,13 +58,13 @@ function TrendCard({ trend }: { trend: TrendRecord }) {
         <span className="text-[28px] font-bold tabular leading-none" style={{ fontFamily: 'Inter Tight, Inter, sans-serif', color: scoreColor(score), letterSpacing: '-0.03em' }}>
           {score}
         </span>
-        <span className="text-[12px] text-[#A1A1AA] pb-0.5">opp. score</span>
+        <span className="text-[12px] text-[#A1A1AA] pb-0.5">trend score</span>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <p className="label-eyebrow mb-0.5">Growth</p>
-          <p className={`text-[13px] font-semibold ${growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {growth > 0 ? '+' : ''}{growth}%
+          <p className="label-eyebrow mb-0.5">Velocity</p>
+          <p className={`text-[13px] font-semibold ${velocityColor(velocity)}`}>
+            {velocityLabel(velocity)}
           </p>
         </div>
         <div>
@@ -60,11 +73,7 @@ function TrendCard({ trend }: { trend: TrendRecord }) {
         </div>
       </div>
       <div className="mt-3 pt-3 border-t border-[#F4F4F5] flex items-center justify-between">
-        <div className="flex flex-wrap gap-1">
-          {(trend.tags as string[] ?? []).slice(0, 2).map((t: string) => (
-            <span key={t} className="tag-pill text-[11px]">{t}</span>
-          ))}
-        </div>
+        <span className="text-[11px] text-[#A1A1AA]">{trend.estimatedPosts ? `~${trend.estimatedPosts} posts` : trend.industry ?? ''}</span>
         <ArrowUpRight size={13} className="text-[#D4D4D8] group-hover:text-[#111111] transition-colors" />
       </div>
     </div>

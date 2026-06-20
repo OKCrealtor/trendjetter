@@ -1,24 +1,27 @@
-import { Switch, Route, Router, Link } from 'wouter';
+import { Switch, Route, Router, Link, useLocation } from 'wouter';
 import { useHashLocation } from 'wouter/use-hash-location';
 import TrendJetterLogo from '@/components/TrendJetterLogo';
 import { useGlobalCursorSpotlight } from '@/components/AppAnimations';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
-  Hash, LayoutDashboard, Sparkles, TrendingUp, Bookmark,
-  FileText, User, ChevronRight, Menu, X
+  Hash, LayoutDashboard, TrendingUp, Bookmark,
+  FileText, ChevronRight, Menu, LogOut
 } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
+import { useAuth, useUser, UserButton, SignOutButton } from '@clerk/clerk-react';
 import type { User as UserType } from '@shared/schema';
 
-import LandingPage   from '@/pages/landing';
-import DashboardPage from '@/pages/dashboard';
-import GeneratorPage from '@/pages/generator';
-import ResultsPage   from '@/pages/results';
-import TrendsPage    from '@/pages/trends';
+import LandingPage     from '@/pages/landing';
+import DashboardPage   from '@/pages/dashboard';
+import GeneratorPage   from '@/pages/generator';
+import ResultsPage     from '@/pages/results';
+import TrendsPage      from '@/pages/trends';
 import CollectionsPage from '@/pages/collections';
-import ContentPage   from '@/pages/content';
-import AccountPage   from '@/pages/account';
+import ContentPage     from '@/pages/content';
+import AccountPage     from '@/pages/account';
+import SignInPage      from '@/pages/sign-in';
+import SignUpPage      from '@/pages/sign-up';
 
 const NAV = [
   { href: '/dashboard',   label: 'Dashboard',  icon: LayoutDashboard },
@@ -28,9 +31,31 @@ const NAV = [
   { href: '/content',     label: 'Content',    icon: FileText },
 ];
 
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { isLoaded, isSignedIn } = useAuth();
+  const [, navigate] = useHashLocation();
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAFAFA' }}>
+        <div className="w-5 h-5 border-2 border-[#111111] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    // Redirect to sign-in
+    if (typeof window !== 'undefined') window.location.hash = '#/sign-in';
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
 function AppShell({ children }: { children: React.ReactNode }) {
   const [loc] = useHashLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user: clerkUser } = useUser();
 
   // Activate the global cursor glow effect inside the app shell
   useGlobalCursorSpotlight();
@@ -91,28 +116,21 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* User footer */}
         <div className="shrink-0 border-t border-[#E4E4E7] px-3 py-3">
-          <Link href="/account">
-            <a
-              className={`
-                flex items-center gap-2.5 px-3 py-2 rounded-md transition-all no-underline w-full
-                ${loc === '/account' ? 'bg-[#F4F4F5]' : 'hover:bg-[#F4F4F5]'}
-              `}
-            >
-              <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0"
-                style={{ background: '#111111', color: '#FFFFFF' }}
-              >
-                {user?.name?.charAt(0) ?? 'W'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12.5px] font-medium text-[#111111] truncate leading-none mb-0.5" style={{ letterSpacing: '-0.01em' }}>
-                  {user?.name ?? 'Creator'}
-                </p>
-                <p className="text-[11px] text-[#A1A1AA] truncate leading-none">Pro plan</p>
-              </div>
-              <ChevronRight size={12} className="text-[#D4D4D8] shrink-0" />
-            </a>
-          </Link>
+          <div className="flex items-center gap-2.5 px-3 py-2">
+            <UserButton
+              afterSignOutUrl="/#/"
+              appearance={{
+                variables: { colorPrimary: '#111111', borderRadius: '8px' },
+                elements: { avatarBox: 'w-6 h-6' },
+              }}
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-[12.5px] font-medium text-[#111111] truncate leading-none mb-0.5" style={{ letterSpacing: '-0.01em' }}>
+                {clerkUser?.firstName ?? clerkUser?.emailAddresses?.[0]?.emailAddress?.split('@')[0] ?? 'Creator'}
+              </p>
+              <p className="text-[11px] text-[#A1A1AA] truncate leading-none">Free plan</p>
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -149,30 +167,32 @@ export default function App() {
   return (
     <Router hook={useHashLocation}>
       <Switch>
-        {/* Landing — no shell */}
+        {/* Public routes */}
         <Route path="/" component={LandingPage} />
+        <Route path="/sign-in" component={SignInPage} />
+        <Route path="/sign-up" component={SignUpPage} />
 
-        {/* App shell routes */}
+        {/* Protected app shell routes */}
         <Route path="/dashboard">
-          <AppShell><DashboardPage /></AppShell>
+          <AuthGuard><AppShell><DashboardPage /></AppShell></AuthGuard>
         </Route>
         <Route path="/generator">
-          <AppShell><GeneratorPage /></AppShell>
+          <AuthGuard><AppShell><GeneratorPage /></AppShell></AuthGuard>
         </Route>
         <Route path="/results/:id">
-          {(params) => <AppShell><ResultsPage id={params.id} /></AppShell>}
+          {(params) => <AuthGuard><AppShell><ResultsPage id={params.id} /></AppShell></AuthGuard>}
         </Route>
         <Route path="/trends">
-          <AppShell><TrendsPage /></AppShell>
+          <AuthGuard><AppShell><TrendsPage /></AppShell></AuthGuard>
         </Route>
         <Route path="/collections">
-          <AppShell><CollectionsPage /></AppShell>
+          <AuthGuard><AppShell><CollectionsPage /></AppShell></AuthGuard>
         </Route>
         <Route path="/content">
-          <AppShell><ContentPage /></AppShell>
+          <AuthGuard><AppShell><ContentPage /></AppShell></AuthGuard>
         </Route>
         <Route path="/account">
-          <AppShell><AccountPage /></AppShell>
+          <AuthGuard><AppShell><AccountPage /></AppShell></AuthGuard>
         </Route>
       </Switch>
       <Toaster />

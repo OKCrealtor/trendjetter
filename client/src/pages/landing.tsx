@@ -340,7 +340,7 @@ function PricingCard({ plan, delay = 0 }: { plan: typeof PLANS[number]; delay?: 
         ))}
       </div>
       <MagneticBtn
-        href="/generator"
+        href="/sign-up"
         data-testid={`pricing-cta-${plan.name.toLowerCase()}`}
         className={`w-full h-10 rounded-lg text-[13px] font-medium transition-all ${plan.highlight ? 'btn-primary' : 'btn-secondary'}`}
         style={{ justifyContent: 'center' }}
@@ -432,8 +432,8 @@ export default function LandingPage() {
                   onMouseLeave={e => (e.currentTarget.style.color='#52525B')}
                 >{label}</a>
               ))}
-              <MagneticBtn href="/dashboard" style={{ fontSize: 15, color: '#52525B' }}>Sign in</MagneticBtn>
-              <MagneticBtn href="/generator" className="btn-primary" style={{ fontSize: 14, padding: '8px 18px' }} data-testid="hero-cta-nav">Try free</MagneticBtn>
+              <MagneticBtn href="/sign-in" style={{ fontSize: 15, color: '#52525B' }}>Sign in</MagneticBtn>
+              <MagneticBtn href="/sign-up" className="btn-primary" style={{ fontSize: 14, padding: '8px 18px' }} data-testid="hero-cta-nav">Try free</MagneticBtn>
             </div>
             {/* Mobile hamburger */}
             <button
@@ -460,9 +460,9 @@ export default function LandingPage() {
                 >{label}</a>
               ))}
               <a onClick={() => { setMenuOpen(false); }} style={{ padding: '10px 0', borderBottom: '1px solid #F4F4F5', fontSize: 16, color: '#111111', cursor: 'pointer' }}
-                href="/#/dashboard"
+                href="/#/sign-in"
               >Sign in</a>
-              <a href="/#/generator" onClick={() => setMenuOpen(false)}
+              <a href="/#/sign-up" onClick={() => setMenuOpen(false)}
                 style={{ marginTop: 12, textAlign: 'center', fontSize: 15, fontWeight: 600, padding: '12px 0', borderRadius: 10, background: '#111111', color: '#FFFFFF', textDecoration: 'none' }}
               >Try free →</a>
             </div>
@@ -499,7 +499,7 @@ export default function LandingPage() {
             <div className="hero-fade-4" style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 64,
             }}>
-              <MagneticBtn href="/generator" className="btn-primary" style={{ fontSize: 15, padding: '12px 28px' }} data-testid="hero-cta-primary">
+              <MagneticBtn href="/sign-up" className="btn-primary" style={{ fontSize: 15, padding: '12px 28px' }} data-testid="hero-cta-primary">
                 <Hash size={15} /> Try it free
               </MagneticBtn>
               <a href="#features"
@@ -642,7 +642,7 @@ export default function LandingPage() {
               Ready to use real intelligence?
             </h2>
             <p style={{ fontSize: 16, color: '#71717A', marginBottom: 32, lineHeight: 1.65 }}>Stop guessing which hashtags work. TrendJetter scores, ranks, and tells you exactly what to post.</p>
-            <MagneticBtn href="/generator" className="btn-primary" style={{ fontSize: 15, padding: '12px 32px' }} data-testid="final-cta">
+            <MagneticBtn href="/sign-up" className="btn-primary" style={{ fontSize: 15, padding: '12px 32px' }} data-testid="final-cta">
               <Hash size={16} /> Start for free
             </MagneticBtn>
             <p style={{ fontSize: 12, color: '#A1A1AA', marginTop: 16 }}>No credit card required · 5 searches free every month</p>
