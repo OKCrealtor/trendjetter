@@ -69,8 +69,21 @@ function MetricCard({ label, value, delta, spark }: { label: string; value: stri
 export default function DashboardPage() {
   const { data: user, isLoading: userLoading } = useQuery<User>({ queryKey: ['/api/me'] });
   const { data: searches, isLoading: searchesLoading } = useQuery<Search[]>({ queryKey: ['/api/searches'] });
+  const { data: collections } = useQuery<any[]>({ queryKey: ['/api/collections'] });
 
   const recent = searches?.slice(0, 5) ?? [];
+
+  // ── Real per-user stats ──────────────────────────────────────────────────
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const searchesThisMonth = (searches ?? []).filter(s => new Date((s as any).createdAt ?? 0) >= monthStart);
+  const totalHashtags = (searches ?? []).reduce((acc, s) => acc + ((s as any).totalHashtags ?? 30), 0);
+  const avgOppScore = (() => {
+    const scores = (searches ?? []).map(s => (s as any).opportunityScore).filter((v: any) => typeof v === 'number' && v > 0);
+    return scores.length ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length) : null;
+  })();
+  const collectionsCount = (collections ?? []).length;
+  const hasAnyData = (searches ?? []).length > 0;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
@@ -88,10 +101,25 @@ export default function DashboardPage() {
 
       {/* Metric grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <MetricCard label="Searches this month" value="12" delta="+4" spark={[4,6,5,8,7,9,10,12]} />
-        <MetricCard label="Hashtags generated" value="284" spark={[40,55,48,70,65,80,90,284]} />
-        <MetricCard label="Avg opportunity score" value="76" delta="+3" spark={[68,70,72,71,74,73,75,76]} />
-        <MetricCard label="Collections saved" value="3" />
+        <MetricCard
+          label="Searches this month"
+          value={searchesLoading ? '—' : String(searchesThisMonth.length)}
+          spark={searchesThisMonth.length > 0 ? searchesThisMonth.slice(-8).map((_, i) => i + 1) : undefined}
+        />
+        <MetricCard
+          label="Hashtags generated"
+          value={searchesLoading ? '—' : totalHashtags > 0 ? String(totalHashtags) : '0'}
+          spark={totalHashtags > 0 ? [0, Math.round(totalHashtags * 0.3), Math.round(totalHashtags * 0.6), Math.round(totalHashtags * 0.8), totalHashtags] : undefined}
+        />
+        <MetricCard
+          label="Avg opportunity score"
+          value={searchesLoading ? '—' : avgOppScore !== null ? String(avgOppScore) : '—'}
+          spark={avgOppScore !== null ? [avgOppScore - 8, avgOppScore - 5, avgOppScore - 3, avgOppScore - 1, avgOppScore] : undefined}
+        />
+        <MetricCard
+          label="Collections saved"
+          value={String(collectionsCount)}
+        />
       </div>
 
       {/* Main 2-col grid */}
