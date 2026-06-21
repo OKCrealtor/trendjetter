@@ -3,7 +3,7 @@ import { useHashLocation } from 'wouter/use-hash-location';
 import TrendJetterLogo from '@/components/TrendJetterLogo';
 import { useGlobalCursorSpotlight } from '@/components/AppAnimations';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Hash, LayoutDashboard, TrendingUp, Bookmark,
   FileText, ChevronRight, Menu, LogOut
@@ -56,6 +56,15 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const [loc] = useHashLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user: clerkUser } = useUser();
+
+  // Expose Clerk user info to window so apiRequest can send auth headers
+  useEffect(() => {
+    if (clerkUser) {
+      (window as any).__CLERK_USER_ID__ = clerkUser.id;
+      (window as any).__CLERK_USER_EMAIL__ = clerkUser.primaryEmailAddress?.emailAddress ?? '';
+      (window as any).__CLERK_USER_NAME__ = clerkUser.fullName ?? clerkUser.firstName ?? '';
+    }
+  }, [clerkUser]);
 
   // Activate the global cursor glow effect inside the app shell
   useGlobalCursorSpotlight();

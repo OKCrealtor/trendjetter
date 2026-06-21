@@ -13,12 +13,20 @@ import type {
 } from '@shared/schema';
 import supabase from './supabase';
 
+const PLAN_LIMITS: Record<string, number> = { free: 5, pro: 1000, agency: 5000 };
+
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByClerkId(clerkId: string): Promise<User | undefined>;
+  getUserByStripeCustomerId(customerId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  upsertUserByClerkId(clerkId: string, email: string, name: string): Promise<User>;
   updateUserPlan(id: number, plan: string): Promise<User | undefined>;
+  updateUserStripe(id: number, data: { stripeCustomerId?: string; stripeSubscriptionId?: string; stripePriceId?: string; stripeCurrentPeriodEnd?: string; plan?: string }): Promise<User | undefined>;
   incrementSearchCount(userId: number): Promise<void>;
+  checkAndResetMonthlyUsage(userId: number): Promise<void>;
+  getUsageForUser(userId: number): Promise<{ count: number; limit: number; plan: string }>;
 
   createSearch(search: InsertSearch): Promise<Search>;
   getSearch(id: number): Promise<Search | undefined>;
@@ -51,10 +59,16 @@ export interface IStorage {
 function toUser(row: any): User {
   return {
     id: row.id,
+    clerkId: row.clerk_id ?? null,
     email: row.email,
     name: row.name,
     plan: row.plan,
     searchesThisMonth: row.searches_this_month,
+    usageResetAt: row.usage_reset_at ?? new Date().toISOString(),
+    stripeCustomerId: row.stripe_customer_id ?? null,
+    stripeSubscriptionId: row.stripe_subscription_id ?? null,
+    stripePriceId: row.stripe_price_id ?? null,
+    stripeCurrentPeriodEnd: row.stripe_current_period_end ?? null,
     avatar: row.avatar ?? null,
     createdAt: row.created_at,
   };
@@ -173,14 +187,36 @@ export class SupabaseStorage implements IStorage {
     return toUser(data);
   }
 
+  async getUserByClerkId(clerkId: string): Promise<User | undefined> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('clerk_id', clerkId)
+      .single();
+    if (error || !data) return undefined;
+    return toUser(data);
+  }
+
+  async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('stripe_customer_id', customerId)
+      .single();
+    if (error || !data) return undefined;
+    return toUser(data);
+  }
+
   async createUser(user: InsertUser): Promise<User> {
     const { data, error } = await supabase
       .from('users')
       .insert({
+        clerk_id: (user as any).clerkId ?? null,
         email: user.email,
         name: user.name,
         plan: user.plan ?? 'free',
         searches_this_month: user.searchesThisMonth ?? 0,
+        usage_reset_at: new Date().toISOString(),
         avatar: user.avatar ?? null,
       })
       .select()
@@ -189,10 +225,40 @@ export class SupabaseStorage implements IStorage {
     return toUser(data);
   }
 
+  // Create or update user from Clerk auth — called on every authenticated request
+  async upsertUserByClerkId(clerkId: string, email: string, name: string): Promise<User> {
+    const existing = await this.getUserByClerkId(clerkId);
+    if (existing) return existing;
+    // Check by email in case user existed before Clerk
+    const byEmail = await this.getUserByEmail(email);
+    if (byEmail) {
+      await supabase.from('users').update({ clerk_id: clerkId }).eq('id', byEmail.id);
+      return { ...byEmail, clerkId };
+    }
+    return this.createUser({ email, name, plan: 'free', searchesThisMonth: 0, clerkId } as any);
+  }
+
   async updateUserPlan(id: number, plan: string): Promise<User | undefined> {
     const { data, error } = await supabase
       .from('users')
       .update({ plan })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error || !data) return undefined;
+    return toUser(data);
+  }
+
+  async updateUserStripe(id: number, stripeData: { stripeCustomerId?: string; stripeSubscriptionId?: string; stripePriceId?: string; stripeCurrentPeriodEnd?: string; plan?: string }): Promise<User | undefined> {
+    const update: any = {};
+    if (stripeData.stripeCustomerId !== undefined) update.stripe_customer_id = stripeData.stripeCustomerId;
+    if (stripeData.stripeSubscriptionId !== undefined) update.stripe_subscription_id = stripeData.stripeSubscriptionId;
+    if (stripeData.stripePriceId !== undefined) update.stripe_price_id = stripeData.stripePriceId;
+    if (stripeData.stripeCurrentPeriodEnd !== undefined) update.stripe_current_period_end = stripeData.stripeCurrentPeriodEnd;
+    if (stripeData.plan !== undefined) update.plan = stripeData.plan;
+    const { data, error } = await supabase
+      .from('users')
+      .update(update)
       .eq('id', id)
       .select()
       .single();
@@ -207,6 +273,28 @@ export class SupabaseStorage implements IStorage {
       .from('users')
       .update({ searches_this_month: user.searchesThisMonth + 1 })
       .eq('id', userId);
+  }
+
+  async checkAndResetMonthlyUsage(userId: number): Promise<void> {
+    const user = await this.getUser(userId);
+    if (!user) return;
+    const resetAt = new Date(user.usageResetAt);
+    const now = new Date();
+    const daysSinceReset = (now.getTime() - resetAt.getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSinceReset >= 30) {
+      await supabase.from('users').update({
+        searches_this_month: 0,
+        usage_reset_at: now.toISOString(),
+      }).eq('id', userId);
+    }
+  }
+
+  async getUsageForUser(userId: number): Promise<{ count: number; limit: number; plan: string }> {
+    await this.checkAndResetMonthlyUsage(userId);
+    const user = await this.getUser(userId);
+    if (!user) return { count: 0, limit: 5, plan: 'free' };
+    const limit = PLAN_LIMITS[user.plan] ?? 5;
+    return { count: user.searchesThisMonth, limit, plan: user.plan };
   }
 
   // ── Searches ───────────────────────────────────────────────────────────────
@@ -360,7 +448,6 @@ export class SupabaseStorage implements IStorage {
   }
 
   async deleteCollection(id: number): Promise<void> {
-    // collection_tags cascade delete on collection_id FK
     await supabase.from('collections').delete().eq('id', id);
   }
 

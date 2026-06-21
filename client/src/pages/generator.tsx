@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
+import UpgradeModal from '@/components/UpgradeModal';
 import { useMutation } from '@tanstack/react-query';
 import { TiltCard } from '@/components/AppAnimations';
 import { useForm } from 'react-hook-form';
@@ -104,11 +105,27 @@ export default function GeneratorPage() {
   const goal = form.watch('goal');
   const suggestions = TOPICS[industry] ?? TOPICS.default;
 
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState('');
+
   const mutation = useMutation({
-    mutationFn: (data: FormValues) =>
-      apiRequest('POST', '/api/generate', data).then(r => r.json()) as Promise<SearchResult>,
+    mutationFn: async (data: FormValues) => {
+      const res = await apiRequest('POST', '/api/generate', data);
+      const json = await res.json();
+      return json as SearchResult;
+    },
     onSuccess: (result) => navigate(`/results/${result.id}`),
-    onError: () => toast({ title: 'Generation failed', variant: 'destructive' }),
+    onError: (err: any) => {
+      try {
+        const parsed = JSON.parse(err.message.replace(/^\d+: /, ''));
+        if (parsed.error === 'limit_reached') {
+          setUpgradeReason(parsed.message);
+          setShowUpgrade(true);
+          return;
+        }
+      } catch {}
+      toast({ title: 'Generation failed', description: err.message, variant: 'destructive' });
+    },
   });
 
   return (
@@ -297,6 +314,11 @@ export default function GeneratorPage() {
           <p className="text-center text-[12px] text-[#A1A1AA]">20+ scored hashtags across 5 strategic groups · ~2 seconds</p>
         </form>
       </Form>
+      <UpgradeModal
+        isOpen={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        reason={upgradeReason}
+      />
     </div>
   );
 }

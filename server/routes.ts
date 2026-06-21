@@ -2,12 +2,22 @@ import type { Express } from 'express';
 import { createServer } from 'node:http';
 import type { Server } from 'node:http';
 import Anthropic from '@anthropic-ai/sdk';
+import Stripe from 'stripe';
 import { storage } from './storage';
 import { insertSearchSchema, insertCollectionSchema, insertCollectionTagSchema, insertContentGenerationSchema } from '@shared/schema';
 import type { InsertHashtag } from '@shared/schema';
 import { z } from 'zod';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-05-28.basil' as any })
+  : null;
+
+const PRICE_TO_PLAN: Record<string, string> = {
+  [process.env.STRIPE_PRO_PRICE_ID ?? 'price_pro']: 'pro',
+  [process.env.STRIPE_AGENCY_PRICE_ID ?? 'price_agency']: 'agency',
+};
 
 // ─────────────────────────────────────────────
 // Claude AI Engine — primary hashtag generator
@@ -478,13 +488,26 @@ function generateContent(topic: string, platform: string, industry: string, tone
 // ─────────────────────────────────────────────
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
-  const DEMO_USER_ID = 1;
+  // ── Auth: resolve Clerk user to DB user ──
+  async function resolveUser(req: any): Promise<{ id: number } | null> {
+    const clerkId = req.headers['x-clerk-user-id'] as string | undefined;
+    const email = req.headers['x-clerk-user-email'] as string | undefined;
+    const name = req.headers['x-clerk-user-name'] as string | undefined;
+    if (clerkId && email) {
+      const user = await storage.upsertUserByClerkId(clerkId, email, name ?? email.split('@')[0]);
+      return { id: user.id };
+    }
+    return { id: 1 }; // fallback demo user
+  }
 
   // ── Current user ──
-  app.get('/api/me', async (_req, res) => {
-    const user = await storage.getUser(DEMO_USER_ID);
+  app.get('/api/me', async (req, res) => {
+    const resolved = await resolveUser(req);
+    if (!resolved) return res.status(401).json({ error: 'Unauthorized' });
+    const user = await storage.getUser(resolved.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(user);
+    const usage = await storage.getUsageForUser(resolved.id);
+    res.json({ ...user, usage });
   });
 
   // ── Generate hashtags ──
@@ -500,6 +523,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post('/api/generate', async (req, res) => {
     try {
+      const resolved = await resolveUser(req);
+      if (!resolved) return res.status(401).json({ error: 'Unauthorized' });
+      const usage = await storage.getUsageForUser(resolved.id);
+      if (usage.count >= usage.limit) {
+        return res.status(429).json({
+          error: 'limit_reached',
+          message: `You've used all ${usage.limit} generations this month.`,
+          plan: usage.plan,
+          limit: usage.limit,
+          count: usage.count,
+        });
+      }
       const body = generateSchema.parse(req.body);
       let gen: GenerateResult;
       if (process.env.ANTHROPIC_API_KEY) {
@@ -515,7 +550,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       // Save search
       const search = await storage.createSearch({
-        userId: DEMO_USER_ID,
+        userId: resolved.id,
         locationCity: body.locationCity,
         locationState: body.locationState,
         locationCountry: body.locationCountry,
@@ -532,7 +567,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       // Save hashtags
       const hashtagInserts: InsertHashtag[] = gen.hashtags.map(h => ({
         searchId: search.id,
-        userId: DEMO_USER_ID,
+        userId: resolved.id,
         tag: h.tag,
         groupType: h.groupType,
         popularityScore: h.popularityScore,
@@ -545,7 +580,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }));
       const savedHashtags = await storage.createHashtags(hashtagInserts);
 
-      await storage.incrementSearchCount(DEMO_USER_ID);
+      await storage.incrementSearchCount(resolved.id);
 
       const result = await storage.getSearchResult(search.id);
       res.json(result);
@@ -563,8 +598,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // ── List past searches ──
-  app.get('/api/searches', async (_req, res) => {
-    const searches = await storage.getSearchesByUser(DEMO_USER_ID, 20);
+  app.get('/api/searches', async (req, res) => {
+    const resolved = await resolveUser(req);
+    if (!resolved) return res.status(401).json({ error: 'Unauthorized' });
+    const searches = await storage.getSearchesByUser(resolved.id, 20);
     res.json(searches);
   });
 
@@ -582,14 +619,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   // ── Collections ──
-  app.get('/api/collections', async (_req, res) => {
-    const cols = await storage.getCollectionsByUser(DEMO_USER_ID);
+  app.get('/api/collections', async (req, res) => {
+    const resolved = await resolveUser(req);
+    if (!resolved) return res.status(401).json({ error: 'Unauthorized' });
+    const cols = await storage.getCollectionsByUser(resolved.id);
     res.json(cols);
   });
 
   app.post('/api/collections', async (req, res) => {
     try {
-      const body = insertCollectionSchema.parse({ ...req.body, userId: DEMO_USER_ID });
+      const resolved = await resolveUser(req);
+      if (!resolved) return res.status(401).json({ error: 'Unauthorized' });
+      const body = insertCollectionSchema.parse({ ...req.body, userId: resolved.id });
       const col = await storage.createCollection(body);
       res.json(col);
     } catch (err: any) {
@@ -648,8 +689,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         content = generateContent(body.topic, body.platform, body.industry, body.tone);
       }
 
+      const resolved = await resolveUser(req);
+      if (!resolved) return res.status(401).json({ error: 'Unauthorized' });
       const gen = await storage.createContentGeneration({
-        userId: DEMO_USER_ID,
+        userId: resolved.id,
         topic: body.topic,
         platform: body.platform,
         tone: body.tone,
@@ -669,13 +712,144 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  app.get('/api/content', async (_req, res) => {
-    const gens = await storage.getContentGenerationsByUser(DEMO_USER_ID, 10);
+  app.get('/api/content', async (req, res) => {
+    const resolved = await resolveUser(req);
+    if (!resolved) return res.status(401).json({ error: 'Unauthorized' });
+    const gens = await storage.getContentGenerationsByUser(resolved.id, 10);
     res.json(gens.map(g => ({
       ...g,
       hashtags: g.hashtags ? JSON.parse(g.hashtags) : [],
       seoKeywords: g.seoKeywords ? JSON.parse(g.seoKeywords) : [],
     })));
+  });
+
+
+  // ── Stripe: Create checkout session ──
+  app.post('/api/stripe/checkout', async (req, res) => {
+    if (!stripe) return res.status(500).json({ error: 'Stripe not configured' });
+    try {
+      const resolved = await resolveUser(req);
+      if (!resolved) return res.status(401).json({ error: 'Unauthorized' });
+      const { priceId } = z.object({ priceId: z.string() }).parse(req.body);
+      const user = await storage.getUser(resolved.id);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.name,
+          metadata: { userId: String(user.id) },
+        });
+        customerId = customer.id;
+        await storage.updateUserStripe(user.id, { stripeCustomerId: customerId });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: 'subscription',
+        success_url: `${process.env.APP_URL ?? 'https://trendjetter.io'}/#/dashboard?upgrade=success`,
+        cancel_url: `${process.env.APP_URL ?? 'https://trendjetter.io'}/#/dashboard?upgrade=cancelled`,
+        subscription_data: { metadata: { userId: String(user.id) } },
+      });
+      res.json({ url: session.url });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  // ── Stripe: Customer portal ──
+  app.post('/api/stripe/portal', async (req, res) => {
+    if (!stripe) return res.status(500).json({ error: 'Stripe not configured' });
+    try {
+      const resolved = await resolveUser(req);
+      if (!resolved) return res.status(401).json({ error: 'Unauthorized' });
+      const user = await storage.getUser(resolved.id);
+      if (!user?.stripeCustomerId) return res.status(400).json({ error: 'No active subscription' });
+      const session = await stripe.billingPortal.sessions.create({
+        customer: user.stripeCustomerId,
+        return_url: `${process.env.APP_URL ?? 'https://trendjetter.io'}/#/dashboard`,
+      });
+      res.json({ url: session.url });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  // ── Stripe: Get usage ──
+  app.get('/api/usage', async (req, res) => {
+    const resolved = await resolveUser(req);
+    if (!resolved) return res.status(401).json({ error: 'Unauthorized' });
+    const usage = await storage.getUsageForUser(resolved.id);
+    res.json(usage);
+  });
+
+  // ── Stripe: Webhook ──
+  app.post('/api/stripe/webhook', async (req, res) => {
+    if (!stripe) return res.status(500).json({ error: 'Stripe not configured' });
+    const sig = req.headers['stripe-signature'] as string;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    let event: Stripe.Event;
+    try {
+      event = webhookSecret && sig
+        ? stripe.webhooks.constructEvent(req.body, sig, webhookSecret)
+        : (req.body as Stripe.Event);
+    } catch (err: any) {
+      return res.status(400).json({ error: `Webhook error: ${err.message}` });
+    }
+    try {
+      switch (event.type) {
+        case 'checkout.session.completed': {
+          const session = event.data.object as Stripe.Checkout.Session;
+          const userId = (session as any).subscription_data?.metadata?.userId ?? session.metadata?.userId;
+          if (userId && session.subscription) {
+            const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+            const priceId = sub.items.data[0]?.price.id ?? '';
+            const plan = PRICE_TO_PLAN[priceId] ?? 'pro';
+            await storage.updateUserStripe(Number(userId), {
+              stripeSubscriptionId: sub.id,
+              stripePriceId: priceId,
+              stripeCurrentPeriodEnd: new Date((sub as any).current_period_end * 1000).toISOString(),
+              plan,
+            });
+          }
+          break;
+        }
+        case 'customer.subscription.updated': {
+          const sub = event.data.object as Stripe.Subscription;
+          const user = await storage.getUserByStripeCustomerId(sub.customer as string);
+          if (user) {
+            const priceId = sub.items.data[0]?.price.id ?? '';
+            const plan = sub.status === 'active' ? (PRICE_TO_PLAN[priceId] ?? 'pro') : 'free';
+            await storage.updateUserStripe(user.id, {
+              stripeSubscriptionId: sub.id,
+              stripePriceId: priceId,
+              stripeCurrentPeriodEnd: new Date((sub as any).current_period_end * 1000).toISOString(),
+              plan,
+            });
+          }
+          break;
+        }
+        case 'customer.subscription.deleted': {
+          const sub = event.data.object as Stripe.Subscription;
+          const user = await storage.getUserByStripeCustomerId(sub.customer as string);
+          if (user) {
+            await storage.updateUserStripe(user.id, {
+              stripeSubscriptionId: '',
+              stripePriceId: '',
+              stripeCurrentPeriodEnd: '',
+              plan: 'free',
+            });
+          }
+          break;
+        }
+      }
+      res.json({ received: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   return httpServer;

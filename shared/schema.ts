@@ -5,10 +5,16 @@ import { z } from "zod";
 // Users table
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  clerkId: text("clerk_id").unique(), // Clerk user ID
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   plan: text("plan").notNull().default("free"), // free | pro | agency
   searchesThisMonth: integer("searches_this_month").notNull().default(0),
+  usageResetAt: text("usage_reset_at").notNull().default(new Date().toISOString()), // when monthly count resets
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  stripePriceId: text("stripe_price_id"),
+  stripeCurrentPeriodEnd: text("stripe_current_period_end"),
   avatar: text("avatar"),
   createdAt: text("created_at").notNull().default(new Date().toISOString()),
 });
