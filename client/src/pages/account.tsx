@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { User, CreditCard, Bell, Shield, Key, LogOut, ChevronRight, Check, ArrowRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,8 +10,57 @@ const PLANS = {
   agency: { name: 'Agency', price: '$99', features: ['Everything in Pro', '5 team seats', 'White-label reports', 'API access', 'Priority support'] },
 };
 
-function PlanCard({ planKey, current }: { planKey: 'free'|'pro'|'agency'; current: boolean }) {
+const PLAN_ORDER = { free: 0, pro: 1, agency: 2 };
+
+function PlanCard({ planKey, currentPlan }: { planKey: 'free'|'pro'|'agency'; currentPlan: 'free'|'pro'|'agency' }) {
   const p = PLANS[planKey];
+  const current = planKey === currentPlan;
+  const isUpgrade = PLAN_ORDER[planKey] > PLAN_ORDER[currentPlan];
+  const isDowngrade = PLAN_ORDER[planKey] < PLAN_ORDER[currentPlan];
+  const [loading, setLoading] = useState(false);
+
+  async function handlePlanChange() {
+    if (current) return;
+    if (planKey === 'free') {
+      // Open Stripe portal to cancel
+      setLoading(true);
+      try {
+        const res = await fetch('/api/stripe/portal', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-clerk-user-id': (window as any).__CLERK_USER_ID__ ?? '',
+            'x-clerk-user-email': (window as any).__CLERK_USER_EMAIL__ ?? '',
+            'x-clerk-user-name': (window as any).__CLERK_USER_NAME__ ?? '',
+          },
+        });
+        const data = await res.json();
+        if (data.url) window.location.href = data.url;
+      } finally { setLoading(false); }
+      return;
+    }
+    const priceId = planKey === 'pro'
+      ? import.meta.env.VITE_STRIPE_PRO_PRICE_ID
+      : import.meta.env.VITE_STRIPE_AGENCY_PRICE_ID;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-clerk-user-id': (window as any).__CLERK_USER_ID__ ?? '',
+          'x-clerk-user-email': (window as any).__CLERK_USER_EMAIL__ ?? '',
+          'x-clerk-user-name': (window as any).__CLERK_USER_NAME__ ?? '',
+        },
+        body: JSON.stringify({ priceId }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } finally { setLoading(false); }
+  }
+
+  const btnLabel = current ? 'Current Plan' : isDowngrade ? (planKey === 'free' ? 'Downgrade to Free' : 'Switch Plan') : 'Upgrade';
+
   return (
     <div className={`bento-tile p-5 flex flex-col gap-4 ${current ? 'border-[#111111]' : ''}`}>
       <div className="flex items-start justify-between">
@@ -31,13 +81,20 @@ function PlanCard({ planKey, current }: { planKey: 'free'|'pro'|'agency'; curren
           </div>
         ))}
       </div>
-      {!current && (
-        <button data-testid={`button-upgrade-${planKey}`}
-          className="w-full h-9 rounded-lg text-[13px] font-medium border border-[#E4E4E7] text-[#52525B] hover:border-[#A1A1AA] hover:text-[#111111] transition-all cursor-pointer flex items-center justify-center gap-1"
-          style={{ fontFamily: 'Inter, sans-serif' }}>
-          Upgrade <ArrowRight size={12} />
-        </button>
-      )}
+      <button
+        data-testid={`button-upgrade-${planKey}`}
+        onClick={handlePlanChange}
+        disabled={current || loading}
+        className={`w-full h-9 rounded-lg text-[13px] font-medium transition-all flex items-center justify-center gap-1 ${
+          current
+            ? 'border border-[#111111] text-[#111111] cursor-default opacity-50'
+            : isUpgrade
+            ? 'bg-[#111111] text-white hover:opacity-90 cursor-pointer'
+            : 'border border-[#E4E4E7] text-[#52525B] hover:border-[#A1A1AA] hover:text-[#111111] cursor-pointer'
+        }`}
+        style={{ fontFamily: 'Inter, sans-serif' }}>
+        {loading ? 'Loading…' : <>{btnLabel}{isUpgrade && <ArrowRight size={12} />}</>}
+      </button>
     </div>
   );
 }
@@ -100,9 +157,9 @@ export default function AccountPage() {
       {/* Plans */}
       <p className="label-eyebrow mb-3 flex items-center gap-2"><CreditCard size={12} />Subscription</p>
       <div className="grid grid-cols-3 gap-3 mb-6">
-        <PlanCard planKey="free" current={plan === 'free'} />
-        <PlanCard planKey="pro" current={plan === 'pro'} />
-        <PlanCard planKey="agency" current={plan === 'agency'} />
+        <PlanCard planKey="free" currentPlan={plan} />
+        <PlanCard planKey="pro" currentPlan={plan} />
+        <PlanCard planKey="agency" currentPlan={plan} />
       </div>
 
       {/* Settings */}

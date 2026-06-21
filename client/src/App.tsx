@@ -137,7 +137,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
               <p className="text-[12.5px] font-medium text-[#111111] truncate leading-none mb-0.5" style={{ letterSpacing: '-0.01em' }}>
                 {clerkUser?.firstName ?? clerkUser?.emailAddresses?.[0]?.emailAddress?.split('@')[0] ?? 'Creator'}
               </p>
-              <p className="text-[11px] text-[#A1A1AA] truncate leading-none">Free plan</p>
+              <p className="text-[11px] text-[#A1A1AA] truncate leading-none capitalize">{user?.plan ?? 'free'} plan</p>
             </div>
           </div>
         </div>
