@@ -57,19 +57,17 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user: clerkUser } = useUser();
 
-  // Expose Clerk user info to window so apiRequest can send auth headers
-  useEffect(() => {
-    if (clerkUser) {
-      (window as any).__CLERK_USER_ID__ = clerkUser.id;
-      (window as any).__CLERK_USER_EMAIL__ = clerkUser.primaryEmailAddress?.emailAddress ?? '';
-      (window as any).__CLERK_USER_NAME__ = clerkUser.fullName ?? clerkUser.firstName ?? '';
-    }
-  }, [clerkUser]);
+  // Set Clerk user info synchronously so API headers are ready before first query
+  if (clerkUser) {
+    (window as any).__CLERK_USER_ID__ = clerkUser.id;
+    (window as any).__CLERK_USER_EMAIL__ = clerkUser.primaryEmailAddress?.emailAddress ?? '';
+    (window as any).__CLERK_USER_NAME__ = clerkUser.fullName ?? clerkUser.firstName ?? '';
+  }
 
   // Activate the global cursor glow effect inside the app shell
   useGlobalCursorSpotlight();
 
-  const { data: user } = useQuery<UserType>({ queryKey: ['/api/me'] });
+  const { data: user } = useQuery<UserType>({ queryKey: ['/api/me'], staleTime: 0, refetchOnMount: true });
 
   return (
     <div

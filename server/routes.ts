@@ -500,7 +500,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const user = await storage.upsertUserByClerkId(clerkId, email, name ?? email.split('@')[0]);
       return { id: user.id };
     }
-    return { id: 1 }; // fallback demo user
+    // No Clerk ID — return null (no demo user fallback)
+    return null;
   }
 
   // ── Current user ──
