@@ -710,6 +710,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         ...gen,
         hashtags: content.hashtags,
         seoKeywords: content.seoKeywords,
+        postingSchedule: {
+          platform: body.platform,
+          bestTimes: ['9:00 AM', '12:00 PM', '6:00 PM'],
+          frequency: '3-5x per week',
+          tips: content.postingSchedule,
+        },
       });
     } catch (err: any) {
       res.status(400).json({ error: err.message });

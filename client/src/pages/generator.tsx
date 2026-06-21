@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import UpgradeModal from '@/components/UpgradeModal';
 import { useMutation } from '@tanstack/react-query';
@@ -12,6 +12,61 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { SearchResult } from '@shared/schema';
+import { Flame, Sparkles } from 'lucide-react';
+
+const LOADING_STEPS = [
+  { icon: '🌐', text: 'Scanning petabytes of social data…' },
+  { icon: '📊', text: 'Analyzing 2026 trend signals…' },
+  { icon: '🔥', text: 'Identifying exploding hashtags…' },
+  { icon: '🎯', text: 'Scoring opportunity vs. competition…' },
+  { icon: '✨', text: 'Assembling your intelligence report…' },
+];
+
+function GeneratingOverlay() {
+  const [step, setStep] = useState(0);
+  const [dots, setDots] = useState('');
+
+  useEffect(() => {
+    const stepTimer = setInterval(() => setStep(s => Math.min(s + 1, LOADING_STEPS.length - 1)), 900);
+    const dotTimer = setInterval(() => setDots(d => d.length >= 3 ? '' : d + '.'), 400);
+    return () => { clearInterval(stepTimer); clearInterval(dotTimer); };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: 'rgba(250,250,250,0.92)', backdropFilter: 'blur(12px)' }}>
+      <div className="text-center max-w-sm px-8">
+        {/* Animated orb */}
+        <div className="relative w-20 h-20 mx-auto mb-8">
+          <div className="absolute inset-0 rounded-full animate-ping" style={{ background: 'rgba(8,145,178,0.15)' }} />
+          <div className="absolute inset-2 rounded-full animate-pulse" style={{ background: 'rgba(8,145,178,0.2)' }} />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-3xl">{LOADING_STEPS[step].icon}</span>
+          </div>
+        </div>
+
+        {/* Step text */}
+        <p className="text-[16px] font-semibold text-[#111111] mb-2" style={{ fontFamily: 'Inter Tight, Inter, sans-serif', letterSpacing: '-0.02em' }}>
+          {LOADING_STEPS[step].text.replace('…', dots)}
+        </p>
+
+        {/* Progress dots */}
+        <div className="flex items-center justify-center gap-1.5 mt-6">
+          {LOADING_STEPS.map((_, i) => (
+            <div key={i} className="rounded-full transition-all duration-500"
+              style={{
+                width: i === step ? 20 : 6,
+                height: 6,
+                background: i <= step ? '#111111' : '#E4E4E7',
+              }} />
+          ))}
+        </div>
+
+        <p className="text-[12px] text-[#A1A1AA] mt-4">Analyzing millions of posts across every platform</p>
+      </div>
+    </div>
+  );
+}
 
 const schema = z.object({
   locationCity: z.string().optional(),
@@ -136,6 +191,7 @@ export default function GeneratorPage() {
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
+      {mutation.isPending && <GeneratingOverlay />}
       <div className="mb-8">
         <h1 className="text-[22px] font-bold text-[#111111] mb-1" style={{ fontFamily: 'Inter Tight, Inter, sans-serif', letterSpacing: '-0.025em' }}>
           Hashtag Generator
@@ -317,7 +373,7 @@ export default function GeneratorPage() {
               : <><Hash size={15} /> Generate Intelligence Report</>
             }
           </button>
-          <p className="text-center text-[12px] text-[#A1A1AA]">30 scored hashtags across 5 strategic groups{genTime ? ` · ${genTime}s` : ' · ~2–4 seconds'}</p>
+          <p className="text-center text-[12px] text-[#A1A1AA]">Scanning petabytes of social data to surface your highest-impact hashtags{genTime ? ` · ${genTime}s` : ''}</p>
         </form>
       </Form>
       <UpgradeModal
