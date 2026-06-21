@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useLocation } from 'wouter';
 import UpgradeModal from '@/components/UpgradeModal';
 import { useMutation } from '@tanstack/react-query';
@@ -107,14 +107,20 @@ export default function GeneratorPage() {
 
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState('');
+  const [genTime, setGenTime] = useState<number | null>(null);
+  const genStartRef = useRef<number>(0);
 
   const mutation = useMutation({
     mutationFn: async (data: FormValues) => {
+      genStartRef.current = Date.now();
       const res = await apiRequest('POST', '/api/generate', data);
       const json = await res.json();
       return json as SearchResult;
     },
-    onSuccess: (result) => navigate(`/results/${result.id}`),
+    onSuccess: (result) => {
+      setGenTime(Math.round((Date.now() - genStartRef.current) / 100) / 10);
+      navigate(`/results/${result.id}`);
+    },
     onError: (err: any) => {
       try {
         const parsed = JSON.parse(err.message.replace(/^\d+: /, ''));
@@ -311,7 +317,7 @@ export default function GeneratorPage() {
               : <><Hash size={15} /> Generate Intelligence Report</>
             }
           </button>
-          <p className="text-center text-[12px] text-[#A1A1AA]">20+ scored hashtags across 5 strategic groups · ~2 seconds</p>
+          <p className="text-center text-[12px] text-[#A1A1AA]">20+ scored hashtags across 5 strategic groups{genTime ? ` · ${genTime}s` : ' · ~2–4 seconds'}</p>
         </form>
       </Form>
       <UpgradeModal
