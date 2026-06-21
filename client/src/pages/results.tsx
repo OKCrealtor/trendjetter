@@ -32,7 +32,7 @@ const GROUP_META: Record<string, { label: string; icon: any; desc: string; color
   medium:       { label: 'Medium Reach',  icon: Target,     desc: 'Balanced reach & discoverability',   color: '#0891B2' },
   niche:        { label: 'Niche',         icon: Hash,       desc: 'Targeted audience, low competition', color: '#16A34A' },
   local:        { label: 'Local',         icon: MapPin,     desc: 'Hyper-local community reach',        color: '#D97706' },
-  trending:     { label: 'Trending Now',  icon: TrendingUp, desc: 'Rising fast in 2026',               color: '#DC2626' },
+  trending:     { label: 'Trending Now',  icon: TrendingUp, desc: 'Rising fast this week',               color: '#DC2626' },
 };
 
 // ─── Animated score bar ────────────────────────────────────────────────────
@@ -135,7 +135,7 @@ function HashtagRow({ tag, rank, groupKey }: { tag: Hashtag; rank: number; group
           {tag.trendDirection === 'rising' && (
             <div className="mt-3 pt-3 border-t border-[#F4F4F5] flex items-center gap-1.5">
               <Zap size={11} className="text-amber-500" />
-              <span className="text-[11px] text-[#71717A]">Trend momentum: <span className="font-semibold text-amber-600">Rising in 2026</span></span>
+              <span className="text-[11px] text-[#71717A]">Trend momentum: <span className="font-semibold text-amber-600">Rising this week</span></span>
             </div>
           )}
         </div>
