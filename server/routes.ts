@@ -753,8 +753,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         payment_method_types: ['card'],
         line_items: [{ price: priceId, quantity: 1 }],
         mode: 'subscription',
-        success_url: `${process.env.APP_URL ?? 'https://trendjetter.io'}/#/dashboard?upgrade=success`,
-        cancel_url: `${process.env.APP_URL ?? 'https://trendjetter.io'}/#/dashboard?upgrade=cancelled`,
+        success_url: `${process.env.APP_URL ?? 'https://www.trendjetter.io'}/#/dashboard`,
+        cancel_url: `${process.env.APP_URL ?? 'https://www.trendjetter.io'}/#/dashboard`,
         subscription_data: { metadata: { userId: String(user.id) } },
       });
       res.json({ url: session.url });
@@ -773,7 +773,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (!user?.stripeCustomerId) return res.status(400).json({ error: 'No active subscription' });
       const session = await stripe.billingPortal.sessions.create({
         customer: user.stripeCustomerId,
-        return_url: `${process.env.APP_URL ?? 'https://trendjetter.io'}/#/dashboard`,
+        return_url: `${process.env.APP_URL ?? 'https://www.trendjetter.io'}/#/dashboard`,
       });
       res.json({ url: session.url });
     } catch (err: any) {
