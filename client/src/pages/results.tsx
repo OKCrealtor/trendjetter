@@ -319,7 +319,7 @@ function GroupSection({ groupKey, tags }: { groupKey: string; tags: Hashtag[] })
           <span>{copied ? 'Copied' : 'Copy usable'}</span>
         </button>
       </div>
-      {open && tags.map((tag, i) => <HashtagRow key={tag.id} tag={tag} rank={i + 1} groupKey={groupKey} />)}
+      {open && [...tags].sort((a, b) => (b.overallScore ?? 0) - (a.overallScore ?? 0)).map((tag, i) => <HashtagRow key={tag.id} tag={tag} rank={i + 1} groupKey={groupKey} />)}
     </div>
   );
 }
