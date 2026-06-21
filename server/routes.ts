@@ -88,7 +88,7 @@ Generate exactly 30 hashtags across 5 groups (6 per group):
 - 6 medium: solid mid-tier tags with good engagement (popularityScore 50-75, competitionScore 45-70, opportunityScore 45-65)
 - 6 niche: highly specific topic tags that attract ideal audience (popularityScore 15-45, competitionScore 15-40, opportunityScore 65-90)
 - 6 local: ${location ? `hyper-local city/region/neighborhood tags for ${location}` : 'tight niche community tags (e.g. #[topic]community, #[topic]creator, #[topic]2026, #[topic]tips)'} (localRelevanceScore 75-99, competitionScore 10-35, opportunityScore 70-92)
-- 6 trending: fast-rising platform-specific tags aligned to goal and current 2026 trends (trendDirection "rising", opportunityScore 55-80)
+- 6 trending: fast-rising tags specific to ${platform} in 2026. For LinkedIn use professional/industry trending tags (e.g. #AIinBusiness, #FutureOfWork). For YouTube use discovery/topic tags. For Facebook use community/group tags. For TikTok/Instagram use viral/entertainment tags. For X use conversation/news tags. All must have trendDirection "rising", opportunityScore 55-80
 
 overallScore = round((popularityScore*0.2) + ((100-competitionScore)*0.3) + (opportunityScore*0.3) + (localRelevanceScore*0.2))
 
@@ -391,10 +391,13 @@ function generateHashtags(input: GenerateInput): GenerateResult {
 
   // TRENDING (4 tags) — goal-based + platform-specific trending
   const trendPool = [...goalTags];
-  if (platform === 'tiktok') trendPool.push('fyp', 'foryoupage', 'viral');
-  if (platform === 'instagram') trendPool.push('reels', 'instadaily', 'instagood');
-  if (platform === 'linkedin') trendPool.push('thoughtleadership', 'networkingtips', 'careergrowth');
-  const trendTagSet = trendPool.slice(0, 4);
+  if (platform === 'tiktok') trendPool.push('fyp', 'foryoupage', 'viral', 'tiktoktrend', 'trending2026', 'foryourpage');
+  if (platform === 'instagram') trendPool.push('reels', 'instadaily', 'instagood', 'explore', 'instareels', 'trending');
+  if (platform === 'linkedin') trendPool.push('linkedin', 'linkedinlearning', 'professionaldevelopment', 'careertips', 'leadership', 'innovation');
+  if (platform === 'youtube') trendPool.push('youtube', 'youtubetrending', 'shorts', 'youtubecommunity', 'subscribe', 'newvideo');
+  if (platform === 'facebook') trendPool.push('facebook', 'facebookreels', 'community', 'facebooklive', 'socialmedia', 'trending');
+  if (platform === 'x') trendPool.push('trending', 'viral', 'twitter', 'xapp', 'thread', 'twittertrends');
+  const trendTagSet = trendPool.slice(0, 6);
   for (const tag of trendTagSet) {
     const pop = 60 + Math.floor(Math.random() * 30);
     const comp = 45 + Math.floor(Math.random() * 30);
@@ -464,7 +467,7 @@ function generateContent(topic: string, platform: string, industry: string, tone
 
   const industryTags = (INDUSTRY_HASHTAGS[industry] ?? INDUSTRY_HASHTAGS.default).slice(0, 6);
   const topicTags = [`#${topicSlug}`, `#${topicSlug}tips`, `#${topicSlug}101`];
-  const platformTags = platform === 'tiktok' ? ['#fyp', '#foryou'] : platform === 'instagram' ? ['#reels', '#explore'] : ['#trending'];
+  const platformTags = platform === 'tiktok' ? ['#fyp', '#foryou', '#viral'] : platform === 'instagram' ? ['#reels', '#explore', '#instadaily'] : platform === 'linkedin' ? ['#linkedin', '#careertips', '#leadership'] : platform === 'youtube' ? ['#youtube', '#shorts', '#subscribe'] : platform === 'facebook' ? ['#facebook', '#community', '#facebookreels'] : ['#trending', '#viral', '#explore'];
 
   const allHashtags = [...new Set([...topicTags, ...industryTags.map(t => `#${t}`), ...platformTags])].slice(0, 15);
 
