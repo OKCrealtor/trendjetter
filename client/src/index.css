@@ -296,26 +296,41 @@
     will-change: width;
   }
 
-  /* ── Verdict badge ── */
-  .verdict-use {
-    background: var(--score-high-bg);
-    color: var(--score-high);
-    border: 1px solid var(--score-high-border);
+  /* ── Verdict badge — 7 tiers ── */
+  .verdict-viral {
+    background: #FEF3C7;
+    color: #B45309;
+    border: 1px solid #FCD34D;
   }
-  .verdict-good {
-    background: var(--score-mid-bg);
-    color: var(--score-mid);
-    border: 1px solid var(--score-mid-border);
+  .verdict-use {
+    background: #DCFCE7;
+    color: #15803D;
+    border: 1px solid #86EFAC;
+  }
+  .verdict-strong {
+    background: #CFFAFE;
+    color: #0E7490;
+    border: 1px solid #67E8F9;
+  }
+  .verdict-filler {
+    background: #DBEAFE;
+    color: #1D4ED8;
+    border: 1px solid #93C5FD;
   }
   .verdict-situational {
-    background: var(--score-low-bg);
-    color: var(--score-low);
-    border: 1px solid var(--score-low-border);
+    background: #FEF9C3;
+    color: #A16207;
+    border: 1px solid #FDE047;
+  }
+  .verdict-low {
+    background: #FFEDD5;
+    color: #C2410C;
+    border: 1px solid #FDBA74;
   }
   .verdict-skip {
-    background: var(--score-skip-bg);
-    color: var(--score-skip);
-    border: 1px solid var(--score-skip-border);
+    background: #FEE2E2;
+    color: #B91C1C;
+    border: 1px solid #FCA5A5;
   }
 
   /* ── Attio CTA button ── */

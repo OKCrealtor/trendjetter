@@ -42,6 +42,8 @@ interface GeneratedHashtag {
   overallScore: number;
   estimatedPosts: string;
   trendDirection: string;
+  momentum: string;
+  confidenceLevel: 'high' | 'medium' | 'estimated';
 }
 
 interface GenerateResult {
@@ -55,15 +57,50 @@ async function generateHashtagsWithAI(input: GenerateInput): Promise<GenerateRes
   const { locationCity, locationState, industry, contentTopic, platform, goal } = input;
   const location = [locationCity, locationState].filter(Boolean).join(', ');
 
-  const prompt = `You are a social media hashtag intelligence expert. Generate a strategic hashtag set for:
+  // Platform-specific intelligence context
+  const platformContext: Record<string, string> = {
+    instagram: `Instagram (mid-2026): Reels dominate reach. Carousel posts (3–7 slides) outperform single images. Algorithm heavily favors saves and shares. Hashtag sweet spot is 5–10 per post. Avoid overused mega-tags (100M+ posts) — they bury content instantly. Niche and micro-community tags (10K–500K posts) are the highest-ROI play right now. Trending formats: aesthetic tutorials, day-in-the-life, transformation content, POV storytelling.`,
+    tiktok: `TikTok (mid-2026): For You Page algorithm prioritizes watch-time and replays. Hashtags categorize content for seeding to the right feeds — 3–5 per video is optimal. Niche creator communities (#BookTok, #FoodTok, #FitTok) have massive engaged sub-audiences. Trending: silent vlogs, duet reactions, hot takes, before/after reveals, 60-second educational breakdowns. Trending sound + relevant hashtag = compound discovery.`,
+    youtube: `YouTube (mid-2026): Hashtags appear above the title. 3 shown above title, up to 15 in description. They influence search and related video recommendations. Shorts hashtags work similarly to TikTok. Best practice: 1 broad category tag, 1 niche topic tag, 1 trending/timely tag.`,
+    linkedin: `LinkedIn (mid-2026): 3–5 hashtags per post is the professional sweet spot. Trending: AI productivity, career pivots, remote work evolution, B2B SaaS, leadership. Algorithm favors posts that generate early comments within first hour. Niche industry hashtags (5K–50K followers) outperform mega-tags.`,
+    facebook: `Facebook (mid-2026): Hashtags matter less here. 1–3 max. More important for Groups and Reels content. Focus on community and local discovery tags.`,
+    twitter: `X/Twitter (mid-2026): 1–2 hashtags per tweet max. Most powerful for joining live conversations, trending topics, and events. Focus on timely, conversational tags over evergreen ones.`,
+  };
 
-- Location: ${location}
+  const platformGuide = platformContext[platform.toLowerCase()] || platformContext['instagram'];
+
+  const prompt = `You are TrendJetter's AI scoring engine — a world-class social media hashtag intelligence system used by thousands of creators to decide which hashtags to use this week. Be accurate, specific, and opinionated.
+
+CREATOR CONTEXT:
+- Platform: ${platform}
 - Industry: ${industry.replace(/_/g, ' ')}
 - Content Topic: ${contentTopic}
-- Platform: ${platform}
 - Goal: ${goal.replace(/_/g, ' ')}
+${location ? `- Location: ${location}` : ''}
 
-Return ONLY valid JSON (no markdown, no explanation) with this exact shape:
+PLATFORM INTELLIGENCE (calibrate your scores to this):
+${platformGuide}
+
+SCORING METHODOLOGY:
+- popularityScore (0-100): How widely used is this tag? 90+ = mega tag (100M+ posts), 70-89 = major (10M-100M), 50-69 = mid-tier (1M-10M), 30-49 = niche (100K-1M), <30 = micro/emerging (<100K)
+- competitionScore (0-100): How hard is it to get discovered via this tag? High = post drowns fast. Factors: post volume velocity, influencer saturation, top content quality bar.
+- opportunityScore (0-100): The real alpha. Low competition + growing interest + underserved niche = high opportunity. This is what separates smart creators from the pack.
+- localRelevanceScore (0-100): Geographic specificity. 0 = global, 99 = hyper-local.
+- overallScore = round((popularityScore*0.2) + ((100-competitionScore)*0.3) + (opportunityScore*0.3) + (localRelevanceScore*0.2))
+
+CONFIDENCE LEVELS — be honest:
+- "high": Established tag with clear usage patterns you can reason about confidently
+- "medium": Recognizable patterns but momentum is harder to pin down precisely
+- "estimated": Emerging or platform-specific tag where you're extrapolating from signals
+
+MOMENTUM (3-6 words max): The specific reason this tag is moving RIGHT NOW. Be concrete and vivid:
+- "viral transformation challenge format"
+- "post-algorithm niche content spike"
+- "summer listing season surge"
+- "AI productivity conversation peak"
+- "evergreen established community anchor"
+
+Return ONLY valid JSON (no markdown, no explanation):
 {
   "hashtags": [
     {
@@ -75,25 +112,37 @@ Return ONLY valid JSON (no markdown, no explanation) with this exact shape:
       "localRelevanceScore": 0-100,
       "overallScore": 0-100,
       "estimatedPosts": "1.2M",
-      "trendDirection": "rising"
+      "trendDirection": "rising",
+      "momentum": "short reason phrase",
+      "confidenceLevel": "high"
     }
   ],
-  "strategyNotes": "2-3 sentence strategy for this market",
-  "platformTip": "specific tip for this platform",
-  "postingRecommendation": "best posting times and frequency"
+  "strategyNotes": "2-3 sentence strategy tailored to this creator and platform",
+  "platformTip": "one specific, actionable tip for this platform right now",
+  "postingRecommendation": "best posting times and frequency for this platform"
 }
 
-Generate exactly 30 hashtags across 5 groups (6 per group):
-- 6 high_volume: broad industry tags with massive reach (popularityScore 80-99, competitionScore 75-95, opportunityScore 20-45)
-- 6 medium: solid mid-tier tags with good engagement (popularityScore 50-75, competitionScore 45-70, opportunityScore 45-65)
-- 6 niche: highly specific topic tags that attract ideal audience (popularityScore 15-45, competitionScore 15-40, opportunityScore 65-90)
-- 6 local: ${location ? `hyper-local city/region/neighborhood tags for ${location}` : 'tight niche community tags (e.g. #[topic]community, #[topic]creator, #[topic]2026, #[topic]tips)'} (localRelevanceScore 75-99, competitionScore 10-35, opportunityScore 70-92)
-- 6 trending: fast-rising tags specific to ${platform} in 2026. For LinkedIn use professional/industry trending tags (e.g. #AIinBusiness, #FutureOfWork). For YouTube use discovery/topic tags. For Facebook use community/group tags. For TikTok/Instagram use viral/entertainment tags. For X use conversation/news tags. All must have trendDirection "rising", opportunityScore 55-80
+SCORE DISTRIBUTION REQUIREMENT — this is critical:
+You MUST produce hashtags that span all 7 verdict tiers. Use these overallScore targets as a guide:
+- 2-3 tags should score 88-100 (Viral Potential) — only truly breakout tags earn this
+- 4-5 tags should score 75-87 (Use Now) — strong, actionable picks
+- 6-8 tags should score 62-74 (Strong Pick) — solid, recommended
+- 6-8 tags should score 48-61 (Good Filler) — decent supporting tags
+- 4-6 tags should score 35-47 (Situational) — use only if highly relevant
+- 2-3 tags should score 20-34 (Low Reach) — real tags that are oversaturated or too obscure
+- 1-2 tags should score 0-19 (Skip) — tags that genuinely hurt discoverability
 
-overallScore = round((popularityScore*0.2) + ((100-competitionScore)*0.3) + (opportunityScore*0.3) + (localRelevanceScore*0.2))
+Do NOT give everything scores of 40-70. Be opinionated. A mega-tag with 500M posts and brutal competition should score LOW (15-30 overallScore). A perfect niche tag with rising momentum should score HIGH (85-95).
+
+Generate exactly 30 hashtags across 5 groups (6 per group):
+- 6 high_volume: dominant industry tags with massive reach — brutal competition means most score 20-50 overallScore despite high popularity. Be honest about saturation.
+- 6 medium: smart creator backbone — moderate everything, most score 48-68 overallScore
+- 6 niche: hidden alpha — low competition + high opportunity = highest scores in the set, target 62-90 overallScore
+- 6 local: ${location ? `hyper-local tags for ${location} — city name combos, neighborhood tags, local community tags` : 'tight creator community tags — creator sub-niches, topic communities, topic+tips combos. No year numbers in tags.'} Score varies widely 35-85 based on actual local community size.
+- 6 trending: this week's fastest-rising tags for ${platform} in the ${industry.replace(/_/g, ' ')} space — platform-native, current, no year numbers. For Instagram/TikTok: viral formats, challenges, seasonal moments. For LinkedIn: professional conversation trends. All must have trendDirection "rising", opportunityScore 55-80, confidenceLevel "medium" or "estimated". Score 55-95 based on momentum strength.
 
 trendDirection must be one of: "rising", "stable", "declining"
-All tags start with #. Local tags must reference ${location} geography. Use real hashtags people actually use.`;
+All tags start with #. No year numbers in hashtags. Use real hashtags creators actually use.`;
 
   const message = await anthropic.messages.create({
     model: 'claude-haiku-4-5',

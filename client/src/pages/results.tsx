@@ -9,22 +9,31 @@ import type { SearchResult, Hashtag } from '@shared/schema';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function scoreColor(s: number) {
-  if (s >= 75) return '#16A34A';
-  if (s >= 55) return '#0891B2';
-  if (s >= 35) return '#D97706';
-  return '#DC2626';
+  if (s >= 88) return '#B45309';   // amber  — Viral Potential
+  if (s >= 75) return '#16A34A';   // green  — Use Now
+  if (s >= 62) return '#0891B2';   // teal   — Strong Pick
+  if (s >= 48) return '#2563EB';   // blue   — Good Filler
+  if (s >= 35) return '#D97706';   // yellow — Situational
+  if (s >= 20) return '#EA580C';   // orange — Low Reach
+  return '#DC2626';                // red    — Skip
 }
 function verdictLabel(s: number) {
-  if (s >= 75) return 'Use Now';
-  if (s >= 55) return 'Good Pick';
-  if (s >= 35) return 'Situational';
-  return 'Skip';
+  if (s >= 88) return '🔥 Viral Potential';
+  if (s >= 75) return '⚡ Use Now';
+  if (s >= 62) return '✓ Strong Pick';
+  if (s >= 48) return '→ Good Filler';
+  if (s >= 35) return '◎ Situational';
+  if (s >= 20) return '↓ Low Reach';
+  return '✕ Skip';
 }
 function verdictBg(s: number) {
-  if (s >= 75) return { background: '#DCFCE7', color: '#15803D' };
-  if (s >= 55) return { background: '#E0F2FE', color: '#0369A1' };
-  if (s >= 35) return { background: '#FEF3C7', color: '#B45309' };
-  return { background: '#FEE2E2', color: '#B91C1C' };
+  if (s >= 88) return { background: '#FEF3C7', color: '#B45309' };   // amber
+  if (s >= 75) return { background: '#DCFCE7', color: '#15803D' };   // green
+  if (s >= 62) return { background: '#CFFAFE', color: '#0E7490' };   // teal
+  if (s >= 48) return { background: '#DBEAFE', color: '#1D4ED8' };   // blue
+  if (s >= 35) return { background: '#FEF9C3', color: '#A16207' };   // yellow
+  if (s >= 20) return { background: '#FFEDD5', color: '#C2410C' };   // orange
+  return { background: '#FEE2E2', color: '#B91C1C' };                // red
 }
 
 const GROUP_META: Record<string, { label: string; icon: any; desc: string; color: string }> = {
@@ -132,12 +141,31 @@ function HashtagRow({ tag, rank, groupKey }: { tag: Hashtag; rank: number; group
               </div>
             ))}
           </div>
-          {tag.trendDirection === 'rising' && (
-            <div className="mt-3 pt-3 border-t border-[#F4F4F5] flex items-center gap-1.5">
-              <Zap size={11} className="text-amber-500" />
-              <span className="text-[11px] text-[#71717A]">Trend momentum: <span className="font-semibold text-amber-600">Rising this week</span></span>
+          {/* Momentum + confidence footer */}
+          <div className="mt-3 pt-3 border-t border-[#F4F4F5] flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Zap size={11} className="text-amber-500 shrink-0" />
+              {(tag as any).momentum ? (
+                <span className="text-[11px] text-[#71717A] truncate">
+                  <span className="font-semibold text-[#111111]">{(tag as any).momentum}</span>
+                </span>
+              ) : (
+                <span className="text-[11px] text-[#71717A]">
+                  {tag.trendDirection === 'rising' ? 'Rising this week' : tag.trendDirection === 'declining' ? 'Losing momentum' : 'Stable performer'}
+                </span>
+              )}
             </div>
-          )}
+            {(tag as any).confidenceLevel && (
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0"
+                style={(tag as any).confidenceLevel === 'high'
+                  ? { background: '#DCFCE7', color: '#15803D' }
+                  : (tag as any).confidenceLevel === 'medium'
+                  ? { background: '#E0F2FE', color: '#0369A1' }
+                  : { background: '#F4F4F5', color: '#71717A' }}>
+                {(tag as any).confidenceLevel === 'high' ? '✓ High confidence' : (tag as any).confidenceLevel === 'medium' ? '~ Signal-based' : '≈ Estimated'}
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -218,7 +246,7 @@ function ExplodingSection({ tags }: { tags: Hashtag[] }) {
           </div>
           <div>
             <p className="text-[13px] font-bold text-white">Exploding Right Now</p>
-            <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{tags.length} tags with rising momentum in 2026</p>
+            <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{tags.length} tags gaining momentum this week</p>
           </div>
         </div>
         <button onClick={copyAll} className="flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
@@ -256,7 +284,7 @@ export default function ResultsPage({ id }: { id: string }) {
     .sort((a, b) => (b.opportunityScore ?? 0) - (a.opportunityScore ?? 0));
   const topTags = [...allTags].sort((a, b) => (b.overallScore ?? 0) - (a.overallScore ?? 0)).slice(0, 5);
   const avgScore = allTags.length ? Math.round(allTags.reduce((s, t) => s + (t.overallScore ?? 0), 0) / allTags.length) : 0;
-  const useNowCount = allTags.filter(t => (t.overallScore ?? 0) >= 75).length;
+  const useNowCount = allTags.filter(t => (t.overallScore ?? 0) >= 62).length;
 
   function copyAll() {
     const text = allTags.map(t => t.tag).join(' ');
@@ -322,7 +350,7 @@ export default function ResultsPage({ id }: { id: string }) {
             {[
               { label: 'Avg Score',  value: avgScore,     color: scoreColor(avgScore) },
               { label: 'Total Tags', value: allTags.length, color: '#111111' },
-              { label: 'Use Now',    value: useNowCount,  color: '#16A34A' },
+              { label: 'Strong+',    value: useNowCount,  color: '#16A34A' },
               { label: 'Exploding',  value: explodingTags.length, color: '#D97706' },
             ].map(({ label, value, color }) => (
               <div key={label} className="bento-tile text-center py-4">

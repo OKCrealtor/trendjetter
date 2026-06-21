@@ -14,16 +14,22 @@ function scoreColor(s: number) {
   return '#DC2626';
 }
 function verdictClass(s: number) {
+  if (s >= 88) return 'verdict-viral';
   if (s >= 75) return 'verdict-use';
-  if (s >= 55) return 'verdict-good';
+  if (s >= 62) return 'verdict-strong';
+  if (s >= 48) return 'verdict-filler';
   if (s >= 35) return 'verdict-situational';
+  if (s >= 20) return 'verdict-low';
   return 'verdict-skip';
 }
 function verdictLabel(s: number) {
-  if (s >= 75) return 'Use This Now';
-  if (s >= 55) return 'Good Pick';
-  if (s >= 35) return 'Situational';
-  return 'Skip';
+  if (s >= 88) return '🔥 Viral Potential';
+  if (s >= 75) return '⚡ Use Now';
+  if (s >= 62) return '✓ Strong Pick';
+  if (s >= 48) return '→ Good Filler';
+  if (s >= 35) return '◎ Situational';
+  if (s >= 20) return '↓ Low Reach';
+  return '✕ Skip';
 }
 
 const PLATFORMS = ['All', 'Instagram', 'TikTok', 'LinkedIn', 'YouTube', 'X', 'Facebook'];
