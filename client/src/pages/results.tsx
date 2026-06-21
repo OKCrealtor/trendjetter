@@ -1,22 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'wouter';
-import { Hash, ArrowLeft, Copy, Check, Star, ChevronDown, ChevronUp, TrendingUp, Zap, Target, BarChart2, MapPin, Flame } from 'lucide-react';
+import { Hash, ArrowLeft, Copy, Check, Star, ChevronDown, ChevronUp, TrendingUp, Zap, Target, BarChart2, MapPin, Flame, Sparkles, AlertTriangle, Info } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import type { SearchResult, Hashtag } from '@shared/schema';
 
-// ─── Helpers ───────────────────────────────────────────────────────────────
+// ─── Score helpers ──────────────────────────────────────────────────────────
 function scoreColor(s: number) {
-  if (s >= 88) return '#B45309';   // amber  — Viral Potential
-  if (s >= 75) return '#16A34A';   // green  — Use Now
-  if (s >= 62) return '#0891B2';   // teal   — Strong Pick
-  if (s >= 48) return '#2563EB';   // blue   — Good Filler
-  if (s >= 35) return '#D97706';   // yellow — Situational
-  if (s >= 20) return '#EA580C';   // orange — Low Reach
-  return '#DC2626';                // red    — Skip
+  if (s >= 88) return '#B45309';
+  if (s >= 75) return '#16A34A';
+  if (s >= 62) return '#0891B2';
+  if (s >= 48) return '#2563EB';
+  if (s >= 35) return '#D97706';
+  if (s >= 20) return '#EA580C';
+  return '#DC2626';
 }
+
 function verdictLabel(s: number) {
   if (s >= 88) return '🔥 Viral Potential';
   if (s >= 75) return '⚡ Use Now';
@@ -26,143 +27,238 @@ function verdictLabel(s: number) {
   if (s >= 20) return '↓ Low Reach';
   return '✕ Skip';
 }
+
 function verdictBg(s: number) {
-  if (s >= 88) return { background: '#FEF3C7', color: '#B45309' };   // amber
-  if (s >= 75) return { background: '#DCFCE7', color: '#15803D' };   // green
-  if (s >= 62) return { background: '#CFFAFE', color: '#0E7490' };   // teal
-  if (s >= 48) return { background: '#DBEAFE', color: '#1D4ED8' };   // blue
-  if (s >= 35) return { background: '#FEF9C3', color: '#A16207' };   // yellow
-  if (s >= 20) return { background: '#FFEDD5', color: '#C2410C' };   // orange
-  return { background: '#FEE2E2', color: '#B91C1C' };                // red
+  if (s >= 88) return { background: '#FEF3C7', color: '#B45309' };
+  if (s >= 75) return { background: '#DCFCE7', color: '#15803D' };
+  if (s >= 62) return { background: '#CFFAFE', color: '#0E7490' };
+  if (s >= 48) return { background: '#DBEAFE', color: '#1D4ED8' };
+  if (s >= 35) return { background: '#FEF9C3', color: '#A16207' };
+  if (s >= 20) return { background: '#FFEDD5', color: '#C2410C' };
+  return { background: '#FEE2E2', color: '#B91C1C' };
 }
 
-const GROUP_META: Record<string, { label: string; icon: any; desc: string; color: string }> = {
-  high_volume:  { label: 'High Volume',   icon: BarChart2,  desc: 'Massive reach, high competition',    color: '#6366F1' },
-  medium:       { label: 'Medium Reach',  icon: Target,     desc: 'Balanced reach & discoverability',   color: '#0891B2' },
-  niche:        { label: 'Niche',         icon: Hash,       desc: 'Targeted audience, low competition', color: '#16A34A' },
-  local:        { label: 'Local',         icon: MapPin,     desc: 'Hyper-local community reach',        color: '#D97706' },
-  trending:     { label: 'Trending Now',  icon: TrendingUp, desc: 'Rising fast this week',               color: '#DC2626' },
+// Plain-English insight for the expanded view — replaces 4 raw score bars
+function getInsight(tag: Hashtag): string {
+  const pop = tag.popularityScore ?? 0;
+  const comp = tag.competitionScore ?? 0;
+  const opp = tag.opportunityScore ?? 0;
+  const loc = tag.localRelevanceScore ?? 0;
+
+  if (pop >= 85 && comp >= 80) return `Mega-popular but brutally competitive — your post will be buried within minutes. Use only alongside stronger niche tags.`;
+  if (pop >= 85 && comp < 60) return `High reach with manageable competition — solid mainstream play for broad discovery.`;
+  if (opp >= 75 && comp < 40) return `Low competition, high opportunity — this is a hidden gem. Early adopters win here.`;
+  if (opp >= 65 && loc >= 70) return `Strong local signal for your area — ideal for geo-targeted reach and community visibility.`;
+  if (opp >= 65) return `Good opportunity window — niche enough to be discoverable, relevant enough to convert.`;
+  if (comp >= 75 && opp < 35) return `Oversaturated — millions of posts competing for the same eyeballs. Skip unless it's core to your brand.`;
+  if (tag.trendDirection === 'rising' && opp >= 55) return `Trending upward this week — momentum is building. Getting in now gives you an early mover edge.`;
+  if (tag.trendDirection === 'declining') return `Losing momentum — this tag was bigger before. Only use if directly relevant to your content.`;
+  if (loc >= 80) return `Hyper-local tag — excellent for targeting your specific market and community.`;
+  return `Mid-tier performer — reliable filler tag to round out your set without hurting reach.`;
+}
+
+// Action-oriented group labels
+const GROUP_META: Record<string, { label: string; actionLabel: string; icon: any; desc: string; color: string }> = {
+  high_volume:  { label: 'High Volume',    actionLabel: 'Cast a Wide Net',      icon: BarChart2,  desc: 'Max reach — brutal competition, use sparingly',  color: '#6366F1' },
+  medium:       { label: 'Medium Reach',   actionLabel: 'Your Bread & Butter',  icon: Target,     desc: 'Best balance of reach and discoverability',       color: '#0891B2' },
+  niche:        { label: 'Niche',          actionLabel: 'Own Your Corner',       icon: Hash,       desc: 'Targeted audience, low competition, high ROI',    color: '#16A34A' },
+  local:        { label: 'Local',          actionLabel: 'Dominate Your Market',  icon: MapPin,     desc: 'Hyper-local reach for your specific area',        color: '#D97706' },
+  trending:     { label: 'Trending Now',   actionLabel: 'Post These Today',      icon: TrendingUp, desc: 'Rising fast this week — window is open now',      color: '#DC2626' },
 };
 
-// ─── Animated score bar ────────────────────────────────────────────────────
-function ScoreBar({ value, color }: { value: number; color: string }) {
-  const [width, setWidth] = useState(0);
-  useEffect(() => {
-    const t = setTimeout(() => setWidth(value), 80);
-    return () => clearTimeout(t);
-  }, [value]);
+// ─── This Week's Kit ────────────────────────────────────────────────────────
+function WeeklyKit({ tags }: { tags: Hashtag[] }) {
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  // Pick the best kit: prioritize trending + niche + local, all score >= 48
+  const kit = [...tags]
+    .filter(t => (t.overallScore ?? 0) >= 48)
+    .sort((a, b) => {
+      // Boost trending and niche
+      const aBoost = (a as any).groupType === 'trending' || (a as any).groupType === 'niche' ? 10 : 0;
+      const bBoost = (b as any).groupType === 'trending' || (b as any).groupType === 'niche' ? 10 : 0;
+      return ((b.overallScore ?? 0) + bBoost) - ((a.overallScore ?? 0) + aBoost);
+    })
+    .slice(0, 10);
+
+  if (kit.length < 3) return null;
+
+  function copyKit() {
+    navigator.clipboard.writeText(kit.map(t => t.tag).join(' '));
+    setCopied(true);
+    toast({ title: `This week's kit copied — ${kit.length} tags ready to paste!` });
+    setTimeout(() => setCopied(false), 2500);
+  }
+
   return (
-    <div className="flex-1 h-1.5 rounded-full bg-[#F4F4F5] overflow-hidden">
-      <div className="h-full rounded-full score-bar" style={{ width: `${width}%`, background: color }} />
+    <div className="rounded-2xl mb-6 overflow-hidden" style={{ background: 'linear-gradient(135deg, #111111 0%, #1a1a1e 100%)', border: '1px solid #2C2C2E' }}>
+      {/* Glow */}
+      <div className="absolute pointer-events-none w-64 h-64 rounded-full" style={{ background: 'radial-gradient(circle, rgba(8,145,178,0.08) 0%, transparent 70%)', top: '-40px', right: '-40px', position: 'absolute' }} />
+
+      {/* Header */}
+      <div className="px-5 pt-5 pb-4 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(8,145,178,0.15)' }}>
+              <Sparkles size={14} className="text-cyan-400" />
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-white leading-tight">This Week's Starter Kit</p>
+              <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>Top {kit.length} tags optimized for right now — copy and paste directly</p>
+            </div>
+          </div>
+          <button onClick={copyKit}
+            className="flex items-center gap-1.5 text-[12px] font-semibold px-4 py-2 rounded-lg transition-all cursor-pointer"
+            style={{ background: copied ? 'rgba(22,163,74,0.2)' : 'rgba(255,255,255,0.1)', color: copied ? '#4ade80' : 'white', border: '1px solid rgba(255,255,255,0.1)' }}>
+            {copied ? <Check size={12} /> : <Copy size={12} />}
+            {copied ? 'Copied!' : 'Copy Kit'}
+          </button>
+        </div>
+      </div>
+
+      {/* Tags grid */}
+      <div className="px-5 py-4 flex flex-wrap gap-2">
+        {kit.map(tag => {
+          const score = tag.overallScore ?? 0;
+          const isTrending = tag.trendDirection === 'rising';
+          return (
+            <div key={tag.id}
+              onClick={() => navigator.clipboard.writeText(tag.tag)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl cursor-pointer transition-all hover:scale-105"
+              style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${isTrending ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.08)'}` }}>
+              {isTrending && <Zap size={9} className="text-amber-400 shrink-0" />}
+              <span className="font-mono text-[12px] font-semibold text-white">{tag.tag}</span>
+              <span className="text-[10px] font-bold ml-0.5" style={{ color: scoreColor(score) }}>{score}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer hint */}
+      <div className="px-5 pb-4 flex items-center gap-1.5">
+        <Zap size={10} className="text-amber-400 shrink-0" />
+        <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+          Scores are AI-modeled signals — updated each generation. Tap any tag to copy individually.
+        </span>
+      </div>
     </div>
   );
 }
 
-// ─── Exploding badge ──────────────────────────────────────────────────────
-function ExplodingBadge() {
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
-      style={{ background: '#FEF3C7', color: '#B45309', letterSpacing: '0.05em' }}>
-      <Flame size={9} /> Exploding
-    </span>
-  );
-}
-
-// ─── Hashtag row ───────────────────────────────────────────────────────────
+// ─── Hashtag row — redesigned ───────────────────────────────────────────────
 function HashtagRow({ tag, rank, groupKey }: { tag: Hashtag; rank: number; groupKey: string }) {
-  const [open, setOpen] = useState(rank <= 2);
+  const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const score = tag.overallScore ?? 0;
-  const color = scoreColor(score);
   const isExploding = tag.trendDirection === 'rising' && (tag.opportunityScore ?? 0) >= 65;
-  const isTrending = groupKey === 'trending' || tag.trendDirection === 'rising';
+  const isTrending = tag.trendDirection === 'rising';
+  const isSkip = score < 35;
+  const momentum = (tag as any).momentum as string | undefined;
+  const confidence = (tag as any).confidenceLevel as string | undefined;
 
-  function copy() {
+  function copy(e: React.MouseEvent) {
+    e.stopPropagation();
     navigator.clipboard.writeText(tag.tag);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
-  return (
-    <div className={`border rounded-xl overflow-hidden mb-2 bg-white transition-all hover:shadow-sm ${isExploding ? 'border-amber-200' : 'border-[#E4E4E7]'}`}
-      style={isExploding ? { boxShadow: '0 0 0 1px #FCD34D22' } : {}}>
-      {/* Header row */}
-      <div className="flex items-center gap-3 px-4 py-3.5 cursor-pointer" onClick={() => setOpen(o => !o)}>
-        {/* Rank */}
-        <span className="text-[11px] font-medium text-[#A1A1AA] tabular w-4 shrink-0">{rank}</span>
+  const leftBorderColor = scoreColor(score);
 
-        {/* Tag + badges */}
-        <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
-          <span className="font-mono text-[13px] font-semibold text-[#111111]">{tag.tag}</span>
-          {isExploding && <ExplodingBadge />}
-          {!isExploding && isTrending && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-              style={{ background: '#FEE2E2', color: '#DC2626', letterSpacing: '0.05em' }}>
-              <TrendingUp size={9} /> Rising
-            </span>
+  return (
+    <div className={`rounded-xl overflow-hidden mb-2 bg-white transition-all hover:shadow-sm ${isSkip ? 'opacity-60' : ''}`}
+      style={{ border: '1px solid #E4E4E7', borderLeft: `3px solid ${leftBorderColor}` }}>
+
+      {/* Main row */}
+      <div className="flex items-center gap-3 px-4 py-3 cursor-pointer" onClick={() => setOpen(o => !o)}>
+        <span className="text-[11px] font-medium text-[#A1A1AA] w-4 shrink-0 tabular">{rank}</span>
+
+        {/* Tag + momentum badge */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`font-mono text-[13px] font-semibold ${isSkip ? 'text-[#A1A1AA] line-through' : 'text-[#111111]'}`}>{tag.tag}</span>
+            {isExploding && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide"
+                style={{ background: '#FEF3C7', color: '#B45309' }}>
+                <Flame size={8} /> Exploding
+              </span>
+            )}
+            {!isExploding && isTrending && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase"
+                style={{ background: '#FEE2E2', color: '#DC2626' }}>
+                <TrendingUp size={8} /> Rising
+              </span>
+            )}
+            {isSkip && (
+              <span className="inline-flex items-center gap-1 text-[9px] text-[#A1A1AA]">
+                <AlertTriangle size={9} /> avoid
+              </span>
+            )}
+          </div>
+          {/* Momentum phrase — the "why" */}
+          {momentum && (
+            <p className="text-[10px] text-[#71717A] mt-0.5 leading-tight">{momentum}</p>
           )}
         </div>
 
-        {/* Score + verdict */}
+        {/* Verdict badge + score */}
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[20px] font-bold tabular" style={{ fontFamily: 'Inter Tight, Inter, sans-serif', color, letterSpacing: '-0.03em' }}>
+          <span className="text-[18px] font-bold tabular" style={{ fontFamily: 'Inter Tight, Inter, sans-serif', color: leftBorderColor, letterSpacing: '-0.03em' }}>
             {score}
           </span>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={verdictBg(score)}>
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap" style={verdictBg(score)}>
             {verdictLabel(score)}
           </span>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+        {/* Copy + expand */}
+        <div className="flex items-center gap-1 shrink-0">
           <button onClick={copy} className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-[#F4F4F5] transition-colors">
             {copied ? <Check size={12} className="text-green-600" /> : <Copy size={12} className="text-[#A1A1AA]" />}
           </button>
-          <button onClick={() => setOpen(o => !o)} className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-[#F4F4F5] transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}
+            className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-[#F4F4F5] transition-colors">
             {open ? <ChevronUp size={12} className="text-[#A1A1AA]" /> : <ChevronDown size={12} className="text-[#A1A1AA]" />}
           </button>
         </div>
       </div>
 
-      {/* Expanded scores */}
+      {/* Expanded: plain-English insight instead of raw bars */}
       {open && (
-        <div className="px-4 pb-4 border-t border-[#F4F4F5]">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 pt-3.5">
-            {[
-              { label: 'Popularity',      value: tag.popularityScore ?? 0 },
-              { label: 'Low Competition', value: 100 - (tag.competitionScore ?? 0) },
-              { label: 'Opportunity',     value: tag.opportunityScore ?? 0 },
-              { label: 'Local Relevance', value: tag.localRelevanceScore ?? 0 },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex items-center gap-2">
-                <span className="text-[11px] text-[#71717A] w-28 shrink-0">{label}</span>
-                <ScoreBar value={value} color={scoreColor(value)} />
-                <span className="text-[11px] font-bold tabular w-6 text-right" style={{ color: scoreColor(value) }}>{value}</span>
-              </div>
-            ))}
-          </div>
-          {/* Momentum + confidence footer */}
-          <div className="mt-3 pt-3 border-t border-[#F4F4F5] flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <Zap size={11} className="text-amber-500 shrink-0" />
-              {(tag as any).momentum ? (
-                <span className="text-[11px] text-[#71717A] truncate">
-                  <span className="font-semibold text-[#111111]">{(tag as any).momentum}</span>
-                </span>
-              ) : (
-                <span className="text-[11px] text-[#71717A]">
-                  {tag.trendDirection === 'rising' ? 'Rising this week' : tag.trendDirection === 'declining' ? 'Losing momentum' : 'Stable performer'}
-                </span>
-              )}
+        <div className="px-4 pb-4 pt-0 border-t border-[#F4F4F5]">
+          {/* Insight sentence */}
+          <p className="text-[12px] text-[#52525B] mt-3 leading-relaxed">{getInsight(tag)}</p>
+
+          {/* Quick stats row */}
+          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#F4F4F5]">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-[#A1A1AA] uppercase tracking-wide font-medium">Reach</span>
+              <span className="text-[11px] font-bold" style={{ color: scoreColor(tag.popularityScore ?? 0) }}>{tag.popularityScore ?? 0}</span>
             </div>
-            {(tag as any).confidenceLevel && (
-              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0"
-                style={(tag as any).confidenceLevel === 'high'
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-[#A1A1AA] uppercase tracking-wide font-medium">Competition</span>
+              <span className="text-[11px] font-bold" style={{ color: (tag.competitionScore ?? 0) > 65 ? '#DC2626' : '#16A34A' }}>
+                {(tag.competitionScore ?? 0) > 65 ? 'High' : (tag.competitionScore ?? 0) > 40 ? 'Medium' : 'Low'}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-[#A1A1AA] uppercase tracking-wide font-medium">Opportunity</span>
+              <span className="text-[11px] font-bold" style={{ color: scoreColor(tag.opportunityScore ?? 0) }}>{tag.opportunityScore ?? 0}</span>
+            </div>
+            {(tag.estimatedPosts) && (
+              <div className="flex items-center gap-1.5 ml-auto">
+                <span className="text-[10px] text-[#A1A1AA]">~{tag.estimatedPosts} posts</span>
+              </div>
+            )}
+            {confidence && (
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide ml-auto"
+                style={confidence === 'high'
                   ? { background: '#DCFCE7', color: '#15803D' }
-                  : (tag as any).confidenceLevel === 'medium'
+                  : confidence === 'medium'
                   ? { background: '#E0F2FE', color: '#0369A1' }
                   : { background: '#F4F4F5', color: '#71717A' }}>
-                {(tag as any).confidenceLevel === 'high' ? '✓ High confidence' : (tag as any).confidenceLevel === 'medium' ? '~ Signal-based' : '≈ Estimated'}
+                {confidence === 'high' ? '✓ High confidence' : confidence === 'medium' ? '~ Signal-based' : '≈ Estimated'}
               </span>
             )}
           </div>
@@ -172,33 +268,36 @@ function HashtagRow({ tag, rank, groupKey }: { tag: Hashtag; rank: number; group
   );
 }
 
-// ─── Group section ─────────────────────────────────────────────────────────
+// ─── Group section ──────────────────────────────────────────────────────────
 function GroupSection({ groupKey, tags }: { groupKey: string; tags: Hashtag[] }) {
   const [open, setOpen] = useState(true);
   const [copied, setCopied] = useState(false);
-  const meta = GROUP_META[groupKey] ?? { label: groupKey, icon: Hash, desc: '', color: '#111111' };
+  const meta = GROUP_META[groupKey] ?? { label: groupKey, actionLabel: groupKey, icon: Hash, desc: '', color: '#111111' };
   const Icon = meta.icon;
   const avgScore = Math.round(tags.reduce((s, t) => s + (t.overallScore ?? 0), 0) / tags.length);
   const explodingCount = tags.filter(t => t.trendDirection === 'rising' && (t.opportunityScore ?? 0) >= 65).length;
+  const strongCount = tags.filter(t => (t.overallScore ?? 0) >= 62).length;
 
   function copyGroup() {
-    navigator.clipboard.writeText(tags.map(t => t.tag).join(' '));
+    // Only copy the usable tags (score >= 35)
+    const usable = tags.filter(t => (t.overallScore ?? 0) >= 35);
+    navigator.clipboard.writeText(usable.map(t => t.tag).join(' '));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
   return (
     <div className="mb-5">
-      {/* Group header */}
       <div className="flex items-center gap-3 mb-2.5">
         <button onClick={() => setOpen(o => !o)} className="flex items-center gap-2.5 flex-1 text-left group cursor-pointer">
-          <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: meta.color + '18' }}>
-            <Icon size={12} style={{ color: meta.color }} />
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: meta.color + '15' }}>
+            <Icon size={13} style={{ color: meta.color }} />
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[13px] font-semibold text-[#111111]">{meta.label}</span>
-              <span className="text-[11px] text-[#A1A1AA]">{tags.length} tags</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Action label is the headline */}
+              <span className="text-[13px] font-bold text-[#111111]">{meta.actionLabel}</span>
+              <span className="text-[10px] text-[#A1A1AA] font-normal">{meta.label}</span>
               <span className="text-[11px] font-semibold" style={{ color: scoreColor(avgScore) }}>Avg {avgScore}</span>
               {explodingCount > 0 && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold"
@@ -206,14 +305,18 @@ function GroupSection({ groupKey, tags }: { groupKey: string; tags: Hashtag[] })
                   <Flame size={8} /> {explodingCount} exploding
                 </span>
               )}
+              {strongCount > 0 && explodingCount === 0 && (
+                <span className="text-[9px] text-[#16A34A] font-semibold">{strongCount} actionable</span>
+              )}
             </div>
-            <p className="text-[11px] text-[#A1A1AA]">{meta.desc}</p>
+            <p className="text-[10px] text-[#A1A1AA]">{meta.desc}</p>
           </div>
-          <div>{open ? <ChevronUp size={13} className="text-[#A1A1AA]" /> : <ChevronDown size={13} className="text-[#A1A1AA]" />}</div>
+          <div className="shrink-0">{open ? <ChevronUp size={13} className="text-[#A1A1AA]" /> : <ChevronDown size={13} className="text-[#A1A1AA]" />}</div>
         </button>
-        <button onClick={copyGroup} className="flex items-center gap-1 text-[11px] text-[#A1A1AA] hover:text-[#111111] transition-colors px-2 py-1 rounded-md hover:bg-[#F4F4F5]">
+        <button onClick={copyGroup}
+          className="flex items-center gap-1 text-[11px] text-[#A1A1AA] hover:text-[#111111] transition-colors px-2 py-1 rounded-md hover:bg-[#F4F4F5] shrink-0">
           {copied ? <Check size={11} className="text-green-600" /> : <Copy size={11} />}
-          <span>{copied ? 'Copied' : 'Copy group'}</span>
+          <span>{copied ? 'Copied' : 'Copy usable'}</span>
         </button>
       </div>
       {open && tags.map((tag, i) => <HashtagRow key={tag.id} tag={tag} rank={i + 1} groupKey={groupKey} />)}
@@ -221,57 +324,7 @@ function GroupSection({ groupKey, tags }: { groupKey: string; tags: Hashtag[] })
   );
 }
 
-// ─── Exploding section ─────────────────────────────────────────────────────
-function ExplodingSection({ tags }: { tags: Hashtag[] }) {
-  const [copied, setCopied] = useState(false);
-  if (tags.length === 0) return null;
-
-  function copyAll() {
-    navigator.clipboard.writeText(tags.map(t => t.tag).join(' '));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  return (
-    <div className="rounded-2xl p-5 mb-6 relative overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #111111 0%, #1C1C1E 100%)', border: '1px solid #2C2C2E' }}>
-      {/* Glow */}
-      <div className="absolute top-0 right-0 w-48 h-48 rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.12) 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
-
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(251,191,36,0.15)' }}>
-            <Flame size={14} className="text-amber-400" />
-          </div>
-          <div>
-            <p className="text-[13px] font-bold text-white">Exploding Right Now</p>
-            <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>{tags.length} tags gaining momentum this week</p>
-          </div>
-        </div>
-        <button onClick={copyAll} className="flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
-          style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}>
-          {copied ? <Check size={11} className="text-green-400" /> : <Copy size={11} />}
-          {copied ? 'Copied' : 'Copy all'}
-        </button>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {tags.map(tag => (
-          <div key={tag.id} className="flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer group"
-            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-            onClick={() => navigator.clipboard.writeText(tag.tag)}>
-            <Zap size={10} className="text-amber-400 shrink-0" />
-            <span className="font-mono text-[12px] font-semibold text-white">{tag.tag}</span>
-            <span className="text-[11px] font-bold tabular" style={{ color: scoreColor(tag.overallScore ?? 0) }}>{tag.overallScore}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Main page ─────────────────────────────────────────────────────────────
+// ─── Main page ──────────────────────────────────────────────────────────────
 export default function ResultsPage({ id }: { id: string }) {
   const { toast } = useToast();
   const { data, isLoading, error } = useQuery<SearchResult>({
@@ -282,19 +335,14 @@ export default function ResultsPage({ id }: { id: string }) {
   const allTags = data?.hashtagGroups ? Object.values(data.hashtagGroups).flat() : [];
   const explodingTags = allTags.filter(t => t.trendDirection === 'rising' && (t.opportunityScore ?? 0) >= 65)
     .sort((a, b) => (b.opportunityScore ?? 0) - (a.opportunityScore ?? 0));
-  const topTags = [...allTags].sort((a, b) => (b.overallScore ?? 0) - (a.overallScore ?? 0)).slice(0, 5);
+  const actionableTags = allTags.filter(t => (t.overallScore ?? 0) >= 62);
+  const skipTags = allTags.filter(t => (t.overallScore ?? 0) < 35);
   const avgScore = allTags.length ? Math.round(allTags.reduce((s, t) => s + (t.overallScore ?? 0), 0) / allTags.length) : 0;
-  const useNowCount = allTags.filter(t => (t.overallScore ?? 0) >= 62).length;
 
   function copyAll() {
-    const text = allTags.map(t => t.tag).join(' ');
-    navigator.clipboard.writeText(text);
-    toast({ title: `${allTags.length} hashtags copied!` });
-  }
-
-  function copyTopPicks() {
-    navigator.clipboard.writeText(topTags.map(t => t.tag).join(' '));
-    toast({ title: 'Top picks copied!' });
+    const usable = allTags.filter(t => (t.overallScore ?? 0) >= 35);
+    navigator.clipboard.writeText(usable.map(t => t.tag).join(' '));
+    toast({ title: `${usable.length} usable hashtags copied (${skipTags.length} skipped tags excluded)` });
   }
 
   if (error) return (
@@ -333,65 +381,39 @@ export default function ResultsPage({ id }: { id: string }) {
                 </>
               )}
               <span className="text-[#E4E4E7]">·</span>
-              <span className="text-[12px] text-[#71717A]">{allTags.length} hashtags</span>
-              {explodingTags.length > 0 && (
-                <>
-                  <span className="text-[#E4E4E7]">·</span>
-                  <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-amber-600">
-                    <Flame size={11} /> {explodingTags.length} exploding
-                  </span>
-                </>
-              )}
+              <span className="text-[12px] text-[#71717A]">{allTags.length} hashtags analyzed</span>
             </div>
           </div>
 
-          {/* Summary cards */}
+          {/* 4 quick-read stat tiles */}
           <div className="grid grid-cols-4 gap-2.5 mb-5">
             {[
-              { label: 'Avg Score',  value: avgScore,     color: scoreColor(avgScore) },
-              { label: 'Total Tags', value: allTags.length, color: '#111111' },
-              { label: 'Strong+',    value: useNowCount,  color: '#16A34A' },
-              { label: 'Exploding',  value: explodingTags.length, color: '#D97706' },
-            ].map(({ label, value, color }) => (
+              { label: 'Actionable',  value: actionableTags.length, color: '#16A34A',  sub: 'score 62+' },
+              { label: 'Exploding',   value: explodingTags.length,  color: '#B45309',  sub: 'this week' },
+              { label: 'Avg Score',   value: avgScore,              color: scoreColor(avgScore), sub: 'out of 100' },
+              { label: 'Skip These',  value: skipTags.length,       color: '#DC2626',  sub: 'hurts reach' },
+            ].map(({ label, value, color, sub }) => (
               <div key={label} className="bento-tile text-center py-4">
                 <p className="text-[24px] font-bold tabular" style={{ fontFamily: 'Inter Tight, Inter, sans-serif', color, letterSpacing: '-0.03em' }}>{value}</p>
-                <p className="label-eyebrow mt-0.5">{label}</p>
+                <p className="text-[11px] font-semibold text-[#111111] mt-0.5">{label}</p>
+                <p className="text-[9px] text-[#A1A1AA] uppercase tracking-wide">{sub}</p>
               </div>
             ))}
           </div>
 
-          {/* Exploding tags spotlight */}
-          <ExplodingSection tags={explodingTags} />
+          {/* This Week's Kit — the hero section */}
+          <WeeklyKit tags={allTags} />
 
-          {/* Top picks */}
-          {topTags.length > 0 && (
-            <div className="bento-tile p-4 mb-5 bg-white">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Star size={13} className="text-[#A1A1AA]" />
-                  <span className="text-[12px] font-semibold text-[#111111]">Top Picks by Score</span>
-                </div>
-                <button onClick={copyTopPicks} className="flex items-center gap-1 text-[11px] text-[#A1A1AA] hover:text-[#111111] transition-colors px-2 py-1 rounded hover:bg-[#F4F4F5]">
-                  <Copy size={10} /> Copy
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {topTags.map(tag => (
-                  <div key={tag.id} onClick={() => navigator.clipboard.writeText(tag.tag)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#E4E4E7] cursor-pointer hover:border-[#111111] transition-colors bg-white">
-                    <span className="font-mono text-[12px] font-medium text-[#111111]">{tag.tag}</span>
-                    <span className="text-[11px] font-bold" style={{ color: scoreColor(tag.overallScore ?? 0) }}>{tag.overallScore}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Copy all */}
+          {/* Copy all (usable only) */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[14px] font-semibold text-[#111111]" style={{ letterSpacing: '-0.01em' }}>All Hashtags by Group</h2>
+            <div>
+              <h2 className="text-[14px] font-semibold text-[#111111]" style={{ letterSpacing: '-0.01em' }}>All Hashtags by Strategy</h2>
+              {skipTags.length > 0 && (
+                <p className="text-[11px] text-[#A1A1AA]">{skipTags.length} tags marked Skip are dimmed — included for reference only</p>
+              )}
+            </div>
             <button onClick={copyAll} className="btn-secondary text-[12px] py-1.5 px-3 flex items-center gap-1.5">
-              <Copy size={12} /> Copy All {allTags.length}
+              <Copy size={12} /> Copy Usable ({allTags.length - skipTags.length})
             </button>
           </div>
 
