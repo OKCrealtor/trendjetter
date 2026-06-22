@@ -235,7 +235,10 @@ export class SupabaseStorage implements IStorage {
       await supabase.from('users').update({ clerk_id: clerkId }).eq('id', byEmail.id);
       return { ...byEmail, clerkId };
     }
-    return this.createUser({ email, name, plan: 'free', searchesThisMonth: 0, clerkId } as any);
+    const newUser = await this.createUser({ email, name, plan: 'free', searchesThisMonth: 0, clerkId } as any);
+    // Fire welcome email asynchronously — never block sign-up
+    sendWelcomeEmail(email, name).catch(() => {});
+    return newUser;
   }
 
   async updateUserPlan(id: number, plan: string): Promise<User | undefined> {
