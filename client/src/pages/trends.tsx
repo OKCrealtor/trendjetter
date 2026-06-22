@@ -142,7 +142,7 @@ export default function TrendsPage() {
           <div>
             <p className="label-eyebrow mb-2">Industry</p>
             <div className="flex flex-wrap gap-1.5">
-              {INDUSTRIES.slice(0, 6).map(i => (
+              {INDUSTRIES.map(i => (
                 <button
                   key={i}
                   onClick={() => setIndustry(i)}
