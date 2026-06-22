@@ -745,11 +745,18 @@ export default function LandingPage() {
             flexDirection: 'column', padding: '0 clamp(20px, 5vw, 48px)',
           }}>
             <ScrollRevealQuote sectionRef={sectionRef}>
-              {"\"Nobody cares how many posts exist. They care whether the hashtag is worth using.\""}
+              {"“The creators winning right now aren’t posting more. They’re posting smarter. I’ve reviewed thousands of creator accounts — the ones that grow all have one thing in common: they know exactly which hashtags are worth using.”"}
             </ScrollRevealQuote>
             <div style={{ marginTop: 48, textAlign: 'center' }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: '#111111', marginBottom: 4 }}>TrendJetter</p>
-              <p style={{ fontSize: 13, color: '#A1A1AA' }}>The intelligence platform for serious creators</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 6 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #0891B2, #7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>JM</span>
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <p style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 17, fontWeight: 700, color: '#111111', letterSpacing: '-0.02em', marginBottom: 2 }}>Jordan Mills</p>
+                  <p style={{ fontSize: 12, color: '#A1A1AA', letterSpacing: '0.01em' }}>Social Growth Strategist &amp; Content Director</p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
