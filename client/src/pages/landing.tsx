@@ -438,7 +438,7 @@ function LandingPricingSection() {
       <div style={{ maxWidth: 1060, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <p className="label-eyebrow" style={{ marginBottom: 12 }}>Pricing</p>
-          <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(24px,3vw,38px)',
+          <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(32px,3vw,42px)',
             fontWeight: 700, letterSpacing: '-0.025em', color: '#111111', marginBottom: 12 }}>
             Simple, transparent pricing
           </h2>
@@ -768,7 +768,7 @@ export default function LandingPage() {
           <div style={{ maxWidth: 900, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
               <p className="label-eyebrow" style={{ marginBottom: 12 }}>The Intelligence Difference</p>
-              <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, letterSpacing: '-0.025em', color: '#111111', marginBottom: 12 }}>Other hashtag tools vs. TrendJetter</h2>
+              <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(32px,3vw,42px)', fontWeight: 700, letterSpacing: '-0.025em', color: '#111111', marginBottom: 12 }}>Other hashtag tools vs. TrendJetter</h2>
               <p style={{ fontSize: 16, color: '#71717A', maxWidth: 400, margin: '0 auto' }}>Most tools show you numbers. TrendJetter tells you what to do.</p>
             </div>
             <div className="comparison-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
@@ -809,7 +809,7 @@ export default function LandingPage() {
           <div id="features" style={{ maxWidth: 1080, margin: '0 auto', position: 'relative' }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
               <p className="label-eyebrow" style={{ marginBottom: 12 }}>Features</p>
-              <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, letterSpacing: '-0.025em', color: '#111111' }}>Everything you need to find the best hashtags</h2>
+              <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(32px,3vw,42px)', fontWeight: 700, letterSpacing: '-0.025em', color: '#111111' }}>Everything you need to find the best hashtags</h2>
             </div>
             <div className="features-grid">
               {FEATURES.map(({ icon, title, desc, accent, example }, i) => (
