@@ -840,8 +840,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         payment_method_types: ['card'],
         line_items: [{ price: priceId, quantity: 1 }],
         mode: 'subscription',
-        success_url: `${process.env.APP_URL ?? 'https://www.trendjetter.io'}/#/dashboard`,
-        cancel_url: `${process.env.APP_URL ?? 'https://www.trendjetter.io'}/#/dashboard`,
+        success_url: `${process.env.APP_URL ?? 'https://www.trendjetter.io'}/#/welcome?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.APP_URL ?? 'https://www.trendjetter.io'}/#/generator`,
         subscription_data: { metadata: { userId: String(user.id) } },
       });
       res.json({ url: session.url });

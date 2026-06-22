@@ -5,9 +5,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { User as UserType } from '@shared/schema';
 
 const PLANS = {
-  free:   { name: 'Free',   price: '$0',  features: ['5 searches/month', '20 hashtags per search', 'Basic scoring', 'Instagram only'] },
-  pro:    { name: 'Pro',    price: '$29', features: ['Unlimited searches', '30 hashtags per search', 'Full intelligence scores', 'All 6 platforms', 'Saved collections', 'Content assistant', 'CSV export'] },
-  agency: { name: 'Agency', price: '$99', features: ['Everything in Pro', '5 team seats', 'White-label reports', 'API access', 'Priority support'] },
+  free:   { name: 'Free',   price: '$0',  features: ['3 searches/month', '10 hashtags per search', 'Basic scoring', 'All 6 platforms'] },
+  pro:    { name: 'Pro',    price: '$29', features: ['1,000 searches/month', '30 hashtags per search', 'Full intelligence scores', 'All 6 platforms', 'Saved collections', 'Content assistant', 'Priority support'] },
+  agency: { name: 'Agency', price: '$99', features: ['5,000 searches/month', '30 hashtags per search', 'Everything in Pro', 'White-label reports', 'API access', 'Dedicated support'] },
 };
 
 const PLAN_ORDER = { free: 0, pro: 1, agency: 2 };
