@@ -71,15 +71,16 @@ function ScrollRevealQuote({ children, sectionRef }: { children: string; section
       const winH = window.innerHeight;
       const sectionRect = section!.getBoundingClientRect();
       const sectionH = section!.offsetHeight;
-      // Attio behaviour: words are ALL gray until the section is fully sticky
-      // (sectionRect.top <= 0). Only then does the fill animation begin.
-      // The "extra" scrollable distance after sticky locks = sectionH - winH.
-      const extraScroll = sectionH - winH;          // ~60vh when section is 160vh
-      const scrolledPastLock = -sectionRect.top;    // 0 when just locked, grows as user scrolls
-      const sectionProgress = Math.max(0, Math.min(1, scrolledPastLock / extraScroll));
+      // Section is 200vh. First 100vh = scrolling into view (entry phase, no fill).
+      // Second 100vh = locked on screen (fill phase).
+      // sectionRect.top goes from 0 to -100vh during the fill phase.
+      // So: scrolledPastLock = -sectionRect.top, clamped to the fill window (0 → winH).
+      const scrolledPastLock = Math.max(0, -sectionRect.top);
+      const fillWindow = winH; // exactly 100vh of post-lock scroll
+      const sectionProgress = Math.max(0, Math.min(1, scrolledPastLock / fillWindow));
       const n = words.length;
       const newP = words.map((_, i) => {
-        // words fill evenly across 0% → 85% of the locked-scroll window
+        // words fill evenly across 0 → 1 of the fill window
         const start = (i / n) * 0.70;
         const end = start + 0.30;
         const p = Math.max(0, Math.min(1, (sectionProgress - start) / (end - start)));
@@ -732,12 +733,14 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Scroll-PINNED quote reveal ── */}
+        {/* ── Quote reveal: slides into view, locks, words fill ── */}
+        {/* Section is 200vh: first 100vh = section scrolls up from below (entry).
+            Second 100vh = fully locked on screen, words fill word by word. */}
         <section
           ref={sectionRef}
           style={{
             ...dotGrid('#F8F8F9'),
-            height: '170vh',
+            height: '200vh',
             position: 'relative',
             borderTop: '1px solid #E4E4E7',
             borderBottom: '1px solid #E4E4E7',
