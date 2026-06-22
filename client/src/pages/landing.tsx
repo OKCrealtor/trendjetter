@@ -672,8 +672,8 @@ export default function LandingPage() {
               fontWeight: 800, lineHeight: 1.04, letterSpacing: '-0.03em',
               color: '#111111', marginBottom: 20,
             }}>
-              The AI hashtag generator<br />
-              <span style={{ color: '#0891B2' }}>that actually scores them.</span>
+              Stop counting posts.<br />
+              <span style={{ color: '#0891B2' }}>Start using intelligence.</span>
             </h1>
             <p className="hero-fade-3" style={{
               fontSize: 18, color: '#71717A', maxWidth: 500, margin: '0 auto 40px', lineHeight: 1.65, letterSpacing: '-0.01em',
