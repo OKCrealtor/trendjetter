@@ -706,14 +706,14 @@ export default function LandingPage() {
 
         {/* ── Stats bar ── */}
         <section style={{ padding: 'clamp(40px,5vw,64px) clamp(16px,4vw,32px)', borderTop: '1px solid #E4E4E7', borderBottom: '1px solid #E4E4E7', background: '#FAFAFA' }}>
-          <div style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0 }}>
+          <div className="stats-bar-grid" style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0 }}>
             {[
               { val: 50000, suf: '+', label: 'Hashtags analyzed',     sub: 'across IG, TikTok & more' },
               { val: 7,     suf: '',  label: 'Scoring dimensions',    sub: 'per hashtag, per platform' },
               { val: 6,     suf: '',  label: 'Platforms supported',   sub: 'IG · TT · YT · X · FB · LI' },
               { val: 2,     suf: 's', label: 'Avg generation time',   sub: 'full AI analysis, instant' },
             ].map(({ val, suf, label, sub }, i) => (
-              <div key={label} style={{
+              <div key={label} className={`stats-bar-cell stats-bar-cell-${i}`} style={{
                 textAlign: 'center',
                 padding: '0 24px',
                 borderRight: i < 3 ? '1px solid #E4E4E7' : 'none',

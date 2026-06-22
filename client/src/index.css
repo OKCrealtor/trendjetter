@@ -661,4 +661,33 @@ p, span, li, a, button, label, input, textarea {
   .col-span-2 {
     grid-column: span 1 !important;
   }
+
+  /* ── Viewport lock — no horizontal scroll on mobile ── */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* ── Stats bar — 2×2 grid on mobile ── */
+  .stats-bar-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0 !important;
+  }
+
+  /* Re-draw borders for 2×2 layout */
+  .stats-bar-cell {
+    padding: 20px 16px !important;
+    border-right: none !important;
+  }
+  /* col 0 and col 1: right border on col 0 only */
+  .stats-bar-cell-0,
+  .stats-bar-cell-2 {
+    border-right: 1px solid #E4E4E7 !important;
+  }
+  /* row 1 (items 2 & 3): top border */
+  .stats-bar-cell-2,
+  .stats-bar-cell-3 {
+    border-top: 1px solid #E4E4E7 !important;
+    padding-top: 20px !important;
+  }
 }
