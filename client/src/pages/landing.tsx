@@ -531,7 +531,7 @@ const LANDING_PLANS = [
     monthlyPrice: '$0', annualPrice: '$0', period: '/month', annualPeriod: '/month',
     annualNote: null as string | null, savings: null as string | null, thenNote: '',
     desc: 'For creators just getting started', dark: false, icon: Zap,
-    features: ['5 generations/month', '20 hashtags per search', 'Basic scoring', 'Instagram & TikTok'],
+    features: ['3 searches/month', '10 hashtags per search', 'Basic scoring', 'Instagram & TikTok'],
     cta: 'Get started free',
   },
   {

@@ -13,7 +13,7 @@ import type {
 } from '@shared/schema';
 import supabase from './supabase';
 
-const PLAN_LIMITS: Record<string, number> = { free: 5, pro: 1000, agency: 5000 };
+const PLAN_LIMITS: Record<string, number> = { free: 3, pro: 1000, agency: 5000 };
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -292,8 +292,8 @@ export class SupabaseStorage implements IStorage {
   async getUsageForUser(userId: number): Promise<{ count: number; limit: number; plan: string }> {
     await this.checkAndResetMonthlyUsage(userId);
     const user = await this.getUser(userId);
-    if (!user) return { count: 0, limit: 5, plan: 'free' };
-    const limit = PLAN_LIMITS[user.plan] ?? 5;
+    if (!user) return { count: 0, limit: 3, plan: 'free' };
+    const limit = PLAN_LIMITS[user.plan] ?? 3;
     return { count: user.searchesThisMonth, limit, plan: user.plan };
   }
 

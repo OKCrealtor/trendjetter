@@ -27,6 +27,7 @@ const PRICE_TO_PLAN: Record<string, string> = {
 // ─────────────────────────────────────────────
 
 interface GenerateInput {
+  hashtagCount?: number;
   locationCity?: string;
   locationState?: string;
   industry: string;
@@ -57,7 +58,7 @@ interface GenerateResult {
 }
 
 async function generateHashtagsWithAI(input: GenerateInput): Promise<GenerateResult> {
-  const { locationCity, locationState, industry, contentTopic, platform, goal } = input;
+  const { locationCity, locationState, industry, contentTopic, platform, goal, hashtagCount = 30 } = input;
   const location = [locationCity, locationState].filter(Boolean).join(', ');
 
   // Platform-specific intelligence context
@@ -137,12 +138,12 @@ You MUST produce hashtags that span all 7 verdict tiers. Use these overallScore 
 
 Do NOT give everything scores of 40-70. Be opinionated. A mega-tag with 500M posts and brutal competition should score LOW (15-30 overallScore). A perfect niche tag with rising momentum should score HIGH (85-95).
 
-Generate exactly 30 hashtags across 5 groups (6 per group):
-- 6 high_volume: dominant industry tags with massive reach — brutal competition means most score 20-50 overallScore despite high popularity. Be honest about saturation.
+Generate exactly ${hashtagCount} hashtags across 5 groups (${Math.floor(hashtagCount / 5)} per group):
+- ${Math.floor(hashtagCount / 5)} high_volume: dominant industry tags with massive reach — brutal competition means most score 20-50 overallScore despite high popularity. Be honest about saturation.
 - 6 medium: smart creator backbone — moderate everything, most score 48-68 overallScore
 - 6 niche: hidden alpha — low competition + high opportunity = highest scores in the set, target 62-90 overallScore
 - 6 local: ${location ? `hyper-local tags for ${location} — city name combos, neighborhood tags, local community tags` : 'tight creator community tags — creator sub-niches, topic communities, topic+tips combos. No year numbers in tags.'} Score varies widely 35-85 based on actual local community size.
-- 6 trending: this week's fastest-rising tags for ${platform} in the ${industry.replace(/_/g, ' ')} space — platform-native, current, no year numbers. For Instagram/TikTok: viral formats, challenges, seasonal moments. For LinkedIn: professional conversation trends. All must have trendDirection "rising", opportunityScore 55-80, confidenceLevel "medium" or "estimated". Score 55-95 based on momentum strength.
+- ${Math.floor(hashtagCount / 5)} trending: this week's fastest-rising tags for ${platform} in the ${industry.replace(/_/g, ' ')} space — platform-native, current, no year numbers. For Instagram/TikTok: viral formats, challenges, seasonal moments. For LinkedIn: professional conversation trends. All must have trendDirection "rising", opportunityScore 55-80, confidenceLevel "medium" or "estimated". Score 55-95 based on momentum strength.
 
 trendDirection must be one of: "rising", "stable", "declining"
 All tags start with #. No year numbers in hashtags. Use real hashtags creators actually use.`;
@@ -603,17 +604,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (usage.count >= usage.limit) {
         return res.status(429).json({
           error: 'limit_reached',
-          message: `You've used all ${usage.limit} generations this month.`,
+          message: `You've used all ${usage.limit} searches this month. Upgrade to Pro for 1,000/month.`,
           plan: usage.plan,
           limit: usage.limit,
           count: usage.count,
         });
       }
       const body = generateSchema.parse(req.body);
+      const hashtagCount = (usage.plan === 'free') ? 10 : 30;
       let gen: GenerateResult;
       if (process.env.ANTHROPIC_API_KEY) {
         try {
-          gen = await generateHashtagsWithAI(body);
+          gen = await generateHashtagsWithAI({ ...body, hashtagCount });
         } catch (aiErr: any) {
           console.warn('AI generation failed, using static fallback:', aiErr.message);
           gen = generateHashtags(body);
