@@ -672,7 +672,7 @@ export default function LandingPage() {
               fontSize: 12, fontWeight: 500, color: '#52525B', marginBottom: 24,
             }}>
               <Sparkles size={11} color="#0891B2" />
-              Social Intelligence Platform
+              AI Hashtag Generator &amp; Trend Intelligence
             </div>
             <h1 className="hero-fade-2" style={{
               fontFamily: 'Inter Tight, Inter, sans-serif',
@@ -680,13 +680,13 @@ export default function LandingPage() {
               fontWeight: 800, lineHeight: 1.04, letterSpacing: '-0.03em',
               color: '#111111', marginBottom: 20,
             }}>
-              Stop counting posts.<br />
-              <span style={{ color: '#0891B2' }}>Start using intelligence.</span>
+              The AI hashtag generator<br />
+              <span style={{ color: '#0891B2' }}>that actually scores them.</span>
             </h1>
             <p className="hero-fade-3" style={{
               fontSize: 18, color: '#71717A', maxWidth: 500, margin: '0 auto 40px', lineHeight: 1.65, letterSpacing: '-0.01em',
             }}>
-              TrendJetter scores every hashtag by opportunity, competition, growth, and local relevance — then tells you exactly which ones to use.
+              Find the best hashtags for Instagram, TikTok, YouTube, and more. TrendJetter scores every tag by reach, competition, trend velocity, and local relevance — so you always know exactly what to post.
             </p>
             <div className="hero-fade-4" style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 64,
@@ -767,7 +767,7 @@ export default function LandingPage() {
           <div style={{ maxWidth: 900, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
               <p className="label-eyebrow" style={{ marginBottom: 12 }}>The Intelligence Difference</p>
-              <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, letterSpacing: '-0.025em', color: '#111111', marginBottom: 12 }}>Data vs. Intelligence</h2>
+              <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, letterSpacing: '-0.025em', color: '#111111', marginBottom: 12 }}>Other hashtag tools vs. TrendJetter</h2>
               <p style={{ fontSize: 16, color: '#71717A', maxWidth: 400, margin: '0 auto' }}>Most tools show you numbers. TrendJetter tells you what to do.</p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
@@ -808,7 +808,7 @@ export default function LandingPage() {
           <div id="features" style={{ maxWidth: 1080, margin: '0 auto', position: 'relative' }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
               <p className="label-eyebrow" style={{ marginBottom: 12 }}>Features</p>
-              <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, letterSpacing: '-0.025em', color: '#111111' }}>Built for serious creators</h2>
+              <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, letterSpacing: '-0.025em', color: '#111111' }}>Everything you need to find the best hashtags</h2>
             </div>
             <div className="features-grid">
               {FEATURES.map(({ icon, title, desc, accent, example }, i) => (
@@ -825,9 +825,9 @@ export default function LandingPage() {
         <SpotlightSection style={{ padding: '96px 32px', textAlign: 'center', borderTop: '1px solid #E4E4E7' }}>
           <div style={{ maxWidth: 560, margin: '0 auto', position: 'relative' }}>
             <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, letterSpacing: '-0.025em', color: '#111111', marginBottom: 16 }}>
-              Ready to use real intelligence?
+              The best hashtag generator is free to try
             </h2>
-            <p style={{ fontSize: 16, color: '#71717A', marginBottom: 32, lineHeight: 1.65 }}>Stop guessing which hashtags work. TrendJetter scores, ranks, and tells you exactly what to post.</p>
+            <p style={{ fontSize: 16, color: '#71717A', marginBottom: 32, lineHeight: 1.65 }}>Stop guessing which hashtags work. Get AI-powered hashtag scores, trend data, and a ready-to-post strategy in under 2 seconds.</p>
             <MagneticBtn href="https://accounts.trendjetter.io/sign-up?redirect_url=https%3A%2F%2Fwww.trendjetter.io%2F%23%2Fdashboard" className="btn-primary" style={{ fontSize: 15, padding: '12px 32px' }} data-testid="final-cta">
               <Hash size={16} /> Start for free
             </MagneticBtn>
