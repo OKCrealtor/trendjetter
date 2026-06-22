@@ -71,13 +71,15 @@ function ScrollRevealQuote({ children, sectionRef }: { children: string; section
       const winH = window.innerHeight;
       const sectionRect = section!.getBoundingClientRect();
       const sectionH = section!.offsetHeight;
-      const sectionProgress = Math.max(0, Math.min(1,
-        (winH - sectionRect.top) / (sectionH + winH)
-      ));
+      // Progress: 0 when section top enters viewport bottom, 1 when section bottom leaves viewport top
+      const scrolled = winH - sectionRect.top;
+      const total = sectionH;  // use just the extra scroll, not +winH, for tighter mapping
+      const sectionProgress = Math.max(0, Math.min(1, scrolled / total));
       const n = words.length;
       const newP = words.map((_, i) => {
-        const start = (i / n) * 0.55;
-        const end = start + 0.28;
+        // spread words across 0.1 → 0.75 of total progress so animation is done before bottom
+        const start = 0.08 + (i / n) * 0.52;
+        const end = start + 0.22;
         const p = Math.max(0, Math.min(1, (sectionProgress - start) / (end - start)));
         return p < 0.5 ? 4*p*p*p : 1 - Math.pow(-2*p+2, 3)/2;
       });
@@ -593,7 +595,7 @@ export default function LandingPage() {
   useGlobalCursorSpotlight();
 
   return (
-    <div style={{ backgroundColor: '#FFFFFF', color: '#111111', fontFamily: 'Inter, sans-serif' }}>
+    <div className="landing-overflow-lock" style={{ backgroundColor: '#FFFFFF', color: '#111111', fontFamily: 'Inter, sans-serif' }}>
 
         {/* ── Nav ── */}
         <nav style={{
@@ -733,7 +735,7 @@ export default function LandingPage() {
           ref={sectionRef}
           style={{
             ...dotGrid('#FFFFFF'),
-            height: '180vh',
+            height: 'clamp(220vh, 240vh, 260vh)',
             position: 'relative',
             borderTop: '1px solid #E4E4E7',
             borderBottom: '1px solid #E4E4E7',
