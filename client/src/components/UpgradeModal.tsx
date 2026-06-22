@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { X, Check, Zap, Building2, Sparkles, ArrowRight } from 'lucide-react';
+import { X, Check, Zap, Building2, ArrowRight } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 // ── Price IDs from env ────────────────────────────────────────────────────────
 const PRICE_IDS = {
-  trial:        import.meta.env.VITE_STRIPE_TRIAL_PRICE_ID        ?? '',
   proMonthly:   import.meta.env.VITE_STRIPE_PRO_PRICE_ID          ?? '',
   proAnnual:    import.meta.env.VITE_STRIPE_PRO_ANNUAL_PRICE_ID   ?? '',
   agencyMonthly:import.meta.env.VITE_STRIPE_AGENCY_PRICE_ID       ?? '',
@@ -13,29 +12,6 @@ const PRICE_IDS = {
 };
 
 // ── Plan definitions ──────────────────────────────────────────────────────────
-const TRIAL_PLAN = {
-  key: 'trial',
-  name: '7-Day Trial',
-  badge: '95% OFF',
-  badgeBg: '#0891B2',
-  monthlyPrice: '$1',
-  annualPrice: '$1',
-  period: 'for 7 days',
-  annualPeriod: 'for 7 days',
-  thenNote: 'then $29/mo (Pro)',
-  annualThenNote: 'then $29/mo (Pro)',
-  desc: 'Try everything risk-free',
-  icon: Sparkles,
-  dark: true,
-  features: [
-    'Full Pro access for 7 days',
-    '1,000 generations/month',
-    'AI-powered hashtag intelligence',
-    'Trend analytics dashboard',
-    'Cancel anytime — no charge',
-  ],
-  cta: 'Start for $1',
-};
 
 const PLANS = [
   {
@@ -93,7 +69,6 @@ const PLANS = [
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 function getPriceId(key: string, annual: boolean): string {
-  if (key === 'trial') return PRICE_IDS.trial;
   if (key === 'pro')   return annual ? PRICE_IDS.proAnnual   : PRICE_IDS.proMonthly;
   if (key === 'agency')return annual ? PRICE_IDS.agencyAnnual: PRICE_IDS.agencyMonthly;
   return '';
@@ -272,7 +247,7 @@ export default function UpgradeModal({ isOpen, onClose, currentPlan = 'free', re
     }
   };
 
-  const allCards = [TRIAL_PLAN, ...PLANS];
+  const allCards = [...PLANS];
 
   return (
     <div

@@ -535,14 +535,6 @@ const LANDING_PLANS = [
     cta: 'Get started free',
   },
   {
-    key: 'trial', name: '7-Day Trial', badge: '95% OFF', badgeBg: '#0891B2',
-    monthlyPrice: '$1', annualPrice: '$1', period: 'for 7 days', annualPeriod: 'for 7 days',
-    annualNote: null as string | null, savings: null as string | null, thenNote: 'then $29/mo — cancel anytime',
-    desc: 'Try everything risk-free', dark: true, icon: Sparkles,
-    features: ['Full Pro access, 7 days', '1,000 generations/month', 'AI hashtag intelligence', 'Trend analytics dashboard', 'No charge if you cancel'],
-    cta: 'Start for $1',
-  },
-  {
     key: 'pro', name: 'Pro', badge: 'MOST POPULAR', badgeBg: '#111111',
     monthlyPrice: '$29', annualPrice: '$23', period: '/mo', annualPeriod: '/mo',
     annualNote: 'billed $276/yr', savings: 'Save $72/yr', thenNote: '',
