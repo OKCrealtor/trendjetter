@@ -744,21 +744,14 @@ export default function LandingPage() {
           <div style={{
             position: 'sticky', top: 0, height: '100vh', width: '100%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexDirection: 'column', padding: '0 clamp(20px, 5vw, 48px)',
+            flexDirection: 'column', padding: '0 clamp(28px, 6vw, 80px)',
           }}>
             <ScrollRevealQuote sectionRef={sectionRef}>
               {"“The creators winning right now aren’t posting more. They’re posting smarter.”"}
             </ScrollRevealQuote>
-            <div style={{ marginTop: 48, textAlign: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 6 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #0891B2, #7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>JM</span>
-                </div>
-                <div style={{ textAlign: 'left' }}>
-                  <p style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 17, fontWeight: 700, color: '#111111', letterSpacing: '-0.02em', marginBottom: 2 }}>Jordan Mills</p>
-                  <p style={{ fontSize: 12, color: '#A1A1AA', letterSpacing: '0.01em' }}>Social Growth Strategist &amp; Content Director</p>
-                </div>
-              </div>
+            <div style={{ marginTop: 40, textAlign: 'center' }}>
+              <p style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 15, fontWeight: 600, color: '#111111', letterSpacing: '-0.01em', marginBottom: 4 }}>Jordan Mills</p>
+              <p style={{ fontSize: 12, color: '#A1A1AA', letterSpacing: '0.01em' }}>Social Growth Strategist · Content Director</p>
             </div>
           </div>
         </section>
