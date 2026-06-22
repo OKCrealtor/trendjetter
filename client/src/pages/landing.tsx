@@ -491,7 +491,7 @@ const FEATURES = [
   {
     icon: MapPin,
     title: 'Local Intelligence',
-    desc: '#austinfoodie outperforms #foodie by 3× for Austin creators. TrendJetter factors in your city and market so you're not competing against global volume with a local audience.',
+    desc: "#austinfoodie outperforms #foodie by 3\u00d7 for Austin creators. TrendJetter factors in your city and market so you're not competing against global volume with a local audience.",
     accent: '#7C3AED',
     example: { label: '#okchomes', score: 91, verdict: 'Use Now' },
   },
