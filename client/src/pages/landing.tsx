@@ -745,7 +745,7 @@ export default function LandingPage() {
             flexDirection: 'column', padding: '0 clamp(20px, 5vw, 48px)',
           }}>
             <ScrollRevealQuote sectionRef={sectionRef}>
-              {"“The creators winning right now aren’t posting more. They’re posting smarter. I’ve reviewed thousands of creator accounts — the ones that grow all have one thing in common: they know exactly which hashtags are worth using.”"}
+              {"“The creators winning right now aren’t posting more. They’re posting smarter.”"}
             </ScrollRevealQuote>
             <div style={{ marginTop: 48, textAlign: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 6 }}>
