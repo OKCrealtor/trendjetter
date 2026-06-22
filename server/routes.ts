@@ -16,8 +16,11 @@ const stripe = process.env.STRIPE_SECRET_KEY
   : null;
 
 const PRICE_TO_PLAN: Record<string, string> = {
-  [process.env.STRIPE_PRO_PRICE_ID ?? 'price_pro']: 'pro',
-  [process.env.STRIPE_AGENCY_PRICE_ID ?? 'price_agency']: 'agency',
+  [process.env.STRIPE_PRO_PRICE_ID         ?? 'price_pro']:          'pro',
+  [process.env.STRIPE_PRO_ANNUAL_PRICE_ID  ?? 'price_pro_annual']:   'pro',
+  [process.env.STRIPE_AGENCY_PRICE_ID      ?? 'price_agency']:       'agency',
+  [process.env.STRIPE_AGENCY_ANNUAL_PRICE_ID ?? 'price_agency_ann']: 'agency',
+  [process.env.STRIPE_TRIAL_PRICE_ID       ?? 'price_trial']:        'pro',  // trial converts to pro
 };
 
 // ─────────────────────────────────────────────

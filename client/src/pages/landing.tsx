@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import TrendJetterLogo from '@/components/TrendJetterLogo';
 import { Link, useLocation } from 'wouter';
-import { Hash, Check, Zap, TrendingUp, MapPin, Target, Sparkles, Crown, ChevronDown, Menu, X } from 'lucide-react';
+import { Hash, Check, Zap, TrendingUp, MapPin, Target, Sparkles, Crown, ChevronDown, Menu, X, Building2 } from 'lucide-react';
 
 // ─── Lenis smooth scroll ──────────────────────────────────────────────────────
 // Initialised once at module level, destroyed on HMR via cleanup
@@ -320,38 +320,133 @@ function FeatureCard({ icon: Icon, title, desc, delay = 0 }: { icon: any; title:
   );
 }
 
-// ─── Pricing card ─────────────────────────────────────────────────────────────
-function PricingCard({ plan, delay = 0 }: { plan: typeof PLANS[number]; delay?: number }) {
+// ─── Landing Pricing Card ────────────────────────────────────────────────────
+function LandingPricingCard({ plan, annual }: { plan: typeof LANDING_PLANS[number]; annual: boolean }) {
+  const isDark  = plan.dark;
+  const textPri = isDark ? '#FFFFFF' : '#111111';
+  const textSec = isDark ? '#A1A1AA' : '#52525B';
+  const btnBg   = isDark ? '#FFFFFF' : '#111111';
+  const btnFg   = isDark ? '#111111' : '#FFFFFF';
+  const price   = annual ? plan.annualPrice  : plan.monthlyPrice;
+  const period  = annual ? plan.annualPeriod : plan.period;
   return (
-    <FadeCard delay={delay} highlight={plan.highlight} tilt style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {plan.highlight && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: -4 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '3px 10px', borderRadius: 999, background: '#111111', color: '#FFFFFF' }}>Most Popular</span>
+    <div style={{
+      background: isDark ? '#111111' : '#FFFFFF',
+      border: `1.5px solid ${isDark ? '#2A2A2A' : '#E4E4E7'}`,
+      borderRadius: 14,
+      padding: '24px 20px 20px',
+      display: 'flex', flexDirection: 'column', gap: 14,
+      position: 'relative', flex: 1, minWidth: 0,
+      boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.22)' : '0 1px 8px rgba(0,0,0,0.04)',
+    }}>
+      {plan.badge && (
+        <div style={{ position: 'absolute', top: 13, right: 13 }}>
+          <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase',
+            padding: '3px 8px', borderRadius: 999, background: plan.badgeBg ?? '#111111', color: '#FFFFFF' }}>
+            {plan.badge}
+          </span>
         </div>
       )}
       <div>
-        <p style={{ fontSize: 15, fontWeight: 600, color: '#111111', letterSpacing: '-0.01em', marginBottom: 4 }}>{plan.name}</p>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginBottom: 4 }}>
-          <span style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 28, fontWeight: 700, color: '#111111', letterSpacing: '-0.03em' }}>{plan.price}</span>
-          <span style={{ fontSize: 13, color: '#A1A1AA' }}>{plan.period}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+          <plan.icon size={13} color={isDark ? '#6B7280' : '#0891B2'} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: textPri, letterSpacing: '-0.01em' }}>{plan.name}</span>
         </div>
-        <p style={{ fontSize: 12, color: '#A1A1AA' }}>{plan.desc}</p>
+        <p style={{ fontSize: 11, color: textSec, margin: 0 }}>{plan.desc}</p>
       </div>
-      <div style={{ flex: 1 }} className="space-y-2">
-        {plan.features.map(f => (
-          <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Check size={11} style={{ color: plan.highlight ? '#111111' : '#D4D4D8', flexShrink: 0 }} />
-            <span style={{ fontSize: 12.5, color: plan.highlight ? '#52525B' : '#A1A1AA' }}>{f}</span>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+          <span style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 30, fontWeight: 800,
+            color: textPri, letterSpacing: '-0.04em', lineHeight: 1 }}>{price}</span>
+          <span style={{ fontSize: 12, color: textSec }}>{period}</span>
+        </div>
+        {plan.key === 'trial' ? (
+          <p style={{ fontSize: 11, color: textSec, marginTop: 4 }}>{plan.thenNote}</p>
+        ) : annual && plan.annualNote ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' as const }}>
+            <span style={{ fontSize: 11, color: textSec }}>{plan.annualNote}</span>
+            {plan.savings && (
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999,
+                background: isDark ? 'rgba(8,145,178,0.25)' : 'rgba(8,145,178,0.1)', color: '#0891B2' }}>
+                {plan.savings}
+              </span>
+            )}
           </div>
-        ))}
+        ) : null}
       </div>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
+        {plan.features.map(f => (
+          <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+            <Check size={11} style={{ color: '#0891B2', flexShrink: 0, marginTop: 2 }} />
+            <span style={{ fontSize: 12, color: textSec, lineHeight: 1.45 }}>{f}</span>
+          </li>
+        ))}
+      </ul>
       <MagneticBtn
         href="https://accounts.trendjetter.io/sign-up?redirect_url=https%3A%2F%2Fwww.trendjetter.io%2F%23%2Fdashboard"
-        data-testid={`pricing-cta-${plan.name.toLowerCase()}`}
-        className={`w-full h-10 rounded-lg text-[13px] font-medium transition-all ${plan.highlight ? 'btn-primary' : 'btn-secondary'}`}
-        style={{ justifyContent: 'center' }}
-      >{plan.cta}</MagneticBtn>
-    </FadeCard>
+        data-testid={`pricing-cta-${plan.key}`}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          width: '100%', height: 40, borderRadius: 9,
+          background: btnBg, color: btnFg,
+          fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em',
+          textDecoration: 'none',
+        }}
+      >
+        {plan.cta}
+      </MagneticBtn>
+    </div>
+  );
+}
+
+// ─── Landing Pricing Section (stateful toggle) ────────────────────────────────
+function LandingPricingSection() {
+  const [annual, setAnnual] = useState(false);
+  return (
+    <section id="pricing" style={{ padding: '80px 32px', background: '#FAFAFA', borderTop: '1px solid #E4E4E7' }}>
+      <div style={{ maxWidth: 1060, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 36 }}>
+          <p className="label-eyebrow" style={{ marginBottom: 12 }}>Pricing</p>
+          <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(24px,3vw,38px)',
+            fontWeight: 700, letterSpacing: '-0.025em', color: '#111111', marginBottom: 12 }}>
+            Simple, transparent pricing
+          </h2>
+          <p style={{ fontSize: 16, color: '#71717A', marginBottom: 24 }}>Start free. Upgrade when you need more.</p>
+
+          {/* Toggle */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 0,
+            background: '#E8E8EA', borderRadius: 999, padding: 3 }}>
+            <button onClick={() => setAnnual(false)} style={{
+              padding: '7px 20px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em',
+              background: !annual ? '#111111' : 'transparent',
+              color: !annual ? '#FFFFFF' : '#71717A',
+              transition: 'all 0.18s',
+            }}>Monthly</button>
+            <button onClick={() => setAnnual(true)} style={{
+              padding: '7px 20px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em',
+              background: annual ? '#111111' : 'transparent',
+              color: annual ? '#FFFFFF' : '#71717A',
+              transition: 'all 0.18s',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              Annual
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.09em', textTransform: 'uppercase',
+                padding: '2px 8px', borderRadius: 999, background: '#0891B2', color: '#FFFFFF' }}>
+                Save 20%
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
+          {LANDING_PLANS.map(plan => (
+            <LandingPricingCard key={plan.key} plan={plan} annual={annual} />
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -365,13 +460,39 @@ const FEATURES = [
   { icon: Crown,      title: 'Smart Collections',    desc: 'Save your best hashtag sets by campaign. Your library grows smarter over time.' },
 ];
 
-const PLANS = [
-  { name: 'Free',   price: '$0',  period: '/month', desc: 'For creators just getting started', highlight: false,
-    features: ['5 searches/month', '20 hashtags per search', 'Basic scoring', 'Instagram only'], cta: 'Get started free' },
-  { name: 'Pro',    price: '$29', period: '/month', desc: 'For serious creators and brands',   highlight: true,
-    features: ['Unlimited searches', '30 hashtags per search', 'Full intelligence scores', 'All 6 platforms', 'Saved collections', 'Content assistant', 'CSV export'], cta: 'Start free trial' },
-  { name: 'Agency', price: '$99', period: '/month', desc: 'For teams and agencies',            highlight: false,
-    features: ['Everything in Pro', '5 team seats', 'White-label reports', 'API access', 'Priority support'], cta: 'Contact sales' },
+const LANDING_PLANS = [
+  {
+    key: 'free', name: 'Free', badge: null as string | null, badgeBg: undefined as string | undefined,
+    monthlyPrice: '$0', annualPrice: '$0', period: '/month', annualPeriod: '/month',
+    annualNote: null as string | null, savings: null as string | null, thenNote: '',
+    desc: 'For creators just getting started', dark: false, icon: Zap,
+    features: ['5 generations/month', '20 hashtags per search', 'Basic scoring', 'Instagram & TikTok'],
+    cta: 'Get started free',
+  },
+  {
+    key: 'trial', name: '7-Day Trial', badge: '95% OFF', badgeBg: '#0891B2',
+    monthlyPrice: '$1', annualPrice: '$1', period: 'for 7 days', annualPeriod: 'for 7 days',
+    annualNote: null as string | null, savings: null as string | null, thenNote: 'then $29/mo — cancel anytime',
+    desc: 'Try everything risk-free', dark: true, icon: Sparkles,
+    features: ['Full Pro access, 7 days', '1,000 generations/month', 'AI hashtag intelligence', 'Trend analytics dashboard', 'No charge if you cancel'],
+    cta: 'Start for $1',
+  },
+  {
+    key: 'pro', name: 'Pro', badge: 'MOST POPULAR', badgeBg: '#111111',
+    monthlyPrice: '$29', annualPrice: '$23', period: '/mo', annualPeriod: '/mo',
+    annualNote: 'billed $276/yr', savings: 'Save $72/yr', thenNote: '',
+    desc: 'For serious creators & brands', dark: false, icon: Zap,
+    features: ['1,000 generations/month', 'AI-powered hashtag intelligence', 'Trend analytics dashboard', 'Collections & saved sets', 'Content assistant', 'Priority support'],
+    cta: 'Get started',
+  },
+  {
+    key: 'agency', name: 'Agency', badge: 'BEST VALUE', badgeBg: '#0891B2',
+    monthlyPrice: '$99', annualPrice: '$79', period: '/mo', annualPeriod: '/mo',
+    annualNote: 'billed $948/yr', savings: 'Save $240/yr', thenNote: '',
+    desc: 'For teams & agencies', dark: true, icon: Building2,
+    features: ['5,000 generations/month', 'Everything in Pro', 'Team seats', 'Client management', 'Bulk export', 'Dedicated support'],
+    cta: 'Get started',
+  },
 ];
 
 const dotGrid = (bg = '#FFFFFF'): React.CSSProperties => ({
@@ -628,18 +749,7 @@ export default function LandingPage() {
         </SpotlightSection>
 
         {/* ── Pricing ── */}
-        <section id="pricing" style={{ padding: '80px 32px', background: '#FAFAFA', borderTop: '1px solid #E4E4E7' }}>
-          <div style={{ maxWidth: 900, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 48 }}>
-              <p className="label-eyebrow" style={{ marginBottom: 12 }}>Pricing</p>
-              <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, letterSpacing: '-0.025em', color: '#111111', marginBottom: 12 }}>Simple, transparent pricing</h2>
-              <p style={{ fontSize: 16, color: '#71717A' }}>Start free. Upgrade when you need more.</p>
-            </div>
-            <div className="pricing-grid">
-              {PLANS.map((plan, i) => <PricingCard key={plan.name} plan={plan} delay={i * 80} />)}
-            </div>
-          </div>
-        </section>
+        <LandingPricingSection />
 
         {/* ── Final CTA — spotlight dot grid ── */}
         <SpotlightSection style={{ padding: '96px 32px', textAlign: 'center', borderTop: '1px solid #E4E4E7' }}>
