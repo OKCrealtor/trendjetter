@@ -297,24 +297,53 @@ function DemoCard({ tag, score, competition, growth, relevance, verdict, delay =
 }
 
 // ─── Feature card ─────────────────────────────────────────────────────────────
-function FeatureCard({ icon: Icon, title, desc, delay = 0 }: { icon: any; title: string; desc: string; delay?: number }) {
+function FeatureCard({ icon: Icon, title, desc, accent, example, delay = 0 }: {
+  icon: any; title: string; desc: string; accent: string;
+  example: { label: string; score: number | null; verdict: string };
+  delay?: number;
+}) {
   const [hovered, setHovered] = useState(false);
   return (
-    <FadeCard delay={delay} tilt style={{ padding: 24 }}>
+    <FadeCard delay={delay} tilt style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 0 }}>
       <div
+        style={{ flex: 1 }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
+        {/* Icon */}
         <div style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: hovered ? '#111111' : '#F4F4F5',
+          width: 38, height: 38, borderRadius: 10,
+          background: hovered ? accent : `${accent}18`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: 16, transition: 'background 0.2s ease',
+          marginBottom: 14, transition: 'background 0.2s ease',
         }}>
-          <Icon size={15} style={{ color: hovered ? '#FFFFFF' : '#52525B', transition: 'color 0.2s ease' }} />
+          <Icon size={16} style={{ color: hovered ? '#FFFFFF' : accent, transition: 'color 0.2s ease' }} />
         </div>
-        <h3 style={{ fontSize: 15, fontWeight: 600, color: '#111111', letterSpacing: '-0.01em', marginBottom: 6 }}>{title}</h3>
-        <p style={{ fontSize: 14, color: '#71717A', lineHeight: 1.6 }}>{desc}</p>
+
+        {/* Title */}
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111111', letterSpacing: '-0.01em', marginBottom: 8 }}>{title}</h3>
+
+        {/* Description */}
+        <p style={{ fontSize: 13.5, color: '#52525B', lineHeight: 1.65, marginBottom: 16 }}>{desc}</p>
+
+        {/* Example pill */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          background: '#F4F4F5', borderRadius: 999, padding: '5px 12px',
+          border: '1px solid #E4E4E7',
+        }}>
+          <span style={{ fontSize: 11.5, fontWeight: 600, color: '#111111', fontFamily: 'ui-monospace, monospace' }}>
+            {example.label}
+          </span>
+          {example.score !== null && (
+            <span style={{ fontSize: 11, fontWeight: 800, color: accent }}>{example.score}</span>
+          )}
+          <span style={{
+            fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+            padding: '2px 7px', borderRadius: 999,
+            background: `${accent}18`, color: accent,
+          }}>{example.verdict}</span>
+        </div>
       </div>
     </FadeCard>
   );
@@ -452,12 +481,48 @@ function LandingPricingSection() {
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const FEATURES = [
-  { icon: Zap,        title: 'Opportunity Scoring',  desc: 'Every hashtag scored by popularity, competition, opportunity, and local relevance — weighted to your goal.' },
-  { icon: MapPin,     title: 'Local Intelligence',   desc: '#austinfoodie outperforms #foodie for Austin creators every time. We score for your market, city, and niche.' },
-  { icon: TrendingUp, title: 'Trend Velocity',       desc: 'See which hashtags are accelerating right now, not just popular. Catch momentum before competitors.' },
-  { icon: Target,     title: 'Goal-Aligned Groups',  desc: 'Five strategic groups per search: High Volume, Medium, Niche, Local, and Trending.' },
-  { icon: Sparkles,   title: 'Content Assistant',    desc: 'AI-written captions, hashtag sets, SEO keywords, and optimal posting schedules in one package.' },
-  { icon: Crown,      title: 'Smart Collections',    desc: 'Save your best hashtag sets by campaign. Your library grows smarter over time.' },
+  {
+    icon: Zap,
+    title: 'Opportunity Scoring',
+    desc: 'Every hashtag is graded across 7 dimensions: reach, competition, engagement rate, trend velocity, audience fit, platform weight, and local relevance. You get a single actionable score — not a wall of data.',
+    accent: '#0891B2',
+    example: { label: '#luxurytravel', score: 94, verdict: 'Use Now' },
+  },
+  {
+    icon: MapPin,
+    title: 'Local Intelligence',
+    desc: '#austinfoodie outperforms #foodie by 3× for Austin creators. TrendJetter factors in your city and market so you're not competing against global volume with a local audience.',
+    accent: '#7C3AED',
+    example: { label: '#okchomes', score: 91, verdict: 'Use Now' },
+  },
+  {
+    icon: TrendingUp,
+    title: 'Trend Velocity',
+    desc: 'Popularity is a lagging indicator. Velocity shows you which hashtags are accelerating this week — before the crowd catches on. First-mover advantage built into every search.',
+    accent: '#059669',
+    example: { label: '+47% this week', score: null, verdict: 'Rising Fast' },
+  },
+  {
+    icon: Target,
+    title: 'Goal-Aligned Groups',
+    desc: 'Results land in five action-ready groups: Post These Today, Own Your Corner, Rising Fast, Your Backyard, and Filler Pack. Your full 30-tag strategy is pre-sorted — just copy and post.',
+    accent: '#D97706',
+    example: { label: '30 tags in 3 tiers', score: null, verdict: 'Ready to Copy' },
+  },
+  {
+    icon: Sparkles,
+    title: 'Content Assistant',
+    desc: 'Get an AI-written caption, your full hashtag set, SEO keywords, and the optimal posting window — all in one click. Everything you need to publish, packaged and ready.',
+    accent: '#0891B2',
+    example: { label: 'Caption + tags + time', score: null, verdict: 'One Click' },
+  },
+  {
+    icon: Crown,
+    title: 'Smart Collections',
+    desc: 'Save your top-performing hashtag sets by campaign, niche, or client. Collections update with fresh scores weekly so your saved sets never go stale.',
+    accent: '#7C3AED',
+    example: { label: 'Auto-refreshed weekly', score: null, verdict: 'Always Fresh' },
+  },
 ];
 
 const LANDING_PLANS = [
@@ -648,19 +713,24 @@ export default function LandingPage() {
         </section>
 
         {/* ── Stats bar ── */}
-        <section style={{ padding: 'clamp(32px,5vw,48px) clamp(16px,4vw,32px)', borderTop: '1px solid #E4E4E7', borderBottom: '1px solid #E4E4E7', background: '#FAFAFA' }}>
-          <div className="stats-grid" style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
+        <section style={{ padding: 'clamp(40px,5vw,64px) clamp(16px,4vw,32px)', borderTop: '1px solid #E4E4E7', borderBottom: '1px solid #E4E4E7', background: '#FAFAFA' }}>
+          <div style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0 }}>
             {[
-              { val: 50000, suf: '+', label: 'Hashtags analyzed' },
-              { val: 94,    suf: '',  label: 'Avg opportunity score' },
-              { val: 6,     suf: '',  label: 'Platforms supported' },
-              { val: 2,     suf: 's', label: 'Avg generation time' },
-            ].map(({ val, suf, label }) => (
-              <div key={label}>
-                <p style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 28, fontWeight: 700, letterSpacing: '-0.03em', color: '#111111', marginBottom: 2 }}>
+              { val: 50000, suf: '+', label: 'Hashtags analyzed',     sub: 'across IG, TikTok & more' },
+              { val: 7,     suf: '',  label: 'Scoring dimensions',    sub: 'per hashtag, per platform' },
+              { val: 6,     suf: '',  label: 'Platforms supported',   sub: 'IG · TT · YT · X · FB · LI' },
+              { val: 2,     suf: 's', label: 'Avg generation time',   sub: 'full AI analysis, instant' },
+            ].map(({ val, suf, label, sub }, i) => (
+              <div key={label} style={{
+                textAlign: 'center',
+                padding: '0 24px',
+                borderRight: i < 3 ? '1px solid #E4E4E7' : 'none',
+              }}>
+                <p style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(32px,4vw,48px)', fontWeight: 800, letterSpacing: '-0.04em', color: '#111111', lineHeight: 1, marginBottom: 6 }}>
                   <AnimNum target={val} suffix={suf} />
                 </p>
-                <p className="label-eyebrow">{label}</p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#111111', marginBottom: 3 }}>{label}</p>
+                <p style={{ fontSize: 11, color: '#A1A1AA', letterSpacing: '0.01em' }}>{sub}</p>
               </div>
             ))}
           </div>
@@ -741,8 +811,8 @@ export default function LandingPage() {
               <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(24px,3vw,38px)', fontWeight: 700, letterSpacing: '-0.025em', color: '#111111' }}>Built for serious creators</h2>
             </div>
             <div className="features-grid">
-              {FEATURES.map(({ icon, title, desc }, i) => (
-                <FeatureCard key={title} icon={icon} title={title} desc={desc} delay={i * 60} />
+              {FEATURES.map(({ icon, title, desc, accent, example }, i) => (
+                <FeatureCard key={title} icon={icon} title={title} desc={desc} accent={accent} example={example} delay={i * 60} />
               ))}
             </div>
           </div>
@@ -766,27 +836,107 @@ export default function LandingPage() {
         </SpotlightSection>
 
         {/* ── Footer ── */}
-        <footer style={{ background: '#111111', padding: '40px 32px' }}>
-          <div style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 24, height: 24, borderRadius: 6, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Hash size={11} color="#FFFFFF" />
+        <footer style={{ background: '#111111', color: '#FFFFFF' }}>
+          {/* Main footer */}
+          <div style={{ maxWidth: 1080, margin: '0 auto', padding: '56px 32px 40px', display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', gap: 40 }}>
+            {/* Brand column */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 7, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Hash size={13} color="#FFFFFF" />
+                </div>
+                <TrendJetterLogo height={20} color="#FFFFFF" />
               </div>
-              <TrendJetterLogo height={18} color="rgba(255,255,255,0.7)" />
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.65, maxWidth: 240 }}>
+                The hashtag intelligence platform for serious creators. Score, rank, and post with confidence — every time.
+              </p>
+              <a href="mailto:hi@trendjetter.io"
+                style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', textDecoration: 'none', transition: 'color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.7)')}
+                onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.35)')}>
+                hi@trendjetter.io
+              </a>
             </div>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>© 2026 TrendJetter. Built for serious creators.</p>
-            <div style={{ display: 'flex', gap: 20 }}>
-              {[
-                { label: 'Privacy', href: '/#/privacy' },
-                { label: 'Terms',   href: '/#/terms' },
-                { label: 'Support', href: 'mailto:hi@trendjetter.io' },
-              ].map(({ label, href }) => (
-                <a key={label} href={href}
-                  style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', textDecoration: 'none', cursor: 'pointer', transition: 'color 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.7)')}
-                  onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.4)')}
-                >{label}</a>
-              ))}
+
+            {/* Product */}
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>Product</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  { label: 'Features',  href: '/#features' },
+                  { label: 'Pricing',   href: '/#pricing' },
+                  { label: 'Dashboard', href: '/#/dashboard' },
+                  { label: 'Generator', href: '/#/dashboard' },
+                ].map(({ label, href }) => (
+                  <a key={label} href={href} style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.9)')}
+                    onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.5)')}>{label}</a>
+                ))}
+              </div>
+            </div>
+
+            {/* Platforms */}
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>Platforms</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {['Instagram', 'TikTok', 'YouTube', 'X / Twitter', 'Facebook', 'LinkedIn'].map(p => (
+                  <span key={p} style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>{p}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Company */}
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 16 }}>Company</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  { label: 'Privacy Policy', href: '/#/privacy' },
+                  { label: 'Terms of Service', href: '/#/terms' },
+                  { label: 'Support', href: 'mailto:hi@trendjetter.io' },
+                  { label: 'Contact', href: 'mailto:hi@trendjetter.io' },
+                ].map(({ label, href }) => (
+                  <a key={label} href={href} style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.9)')}
+                    onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.5)')}>{label}</a>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Sub-footer */}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '20px 32px' }}>
+            <div style={{ maxWidth: 1080, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>© 2026 TrendJetter · Built for serious creators.</p>
+
+              {/* Social icons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                {[
+                  { label: 'Instagram', href: 'https://instagram.com', icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                    </svg>
+                  )},
+                  { label: 'TikTok', href: 'https://tiktok.com', icon: (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.74a4.85 4.85 0 0 1-1.01-.05z"/>
+                    </svg>
+                  )},
+                  { label: 'X', href: 'https://x.com', icon: (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                  )},
+                ].map(({ label, href, icon }) => (
+                  <a key={label} href={href} target="_blank" rel="noopener noreferrer"
+                    aria-label={label}
+                    style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'none', transition: 'color 0.15s', display: 'flex', alignItems: 'center' }}
+                    onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.8)')}
+                    onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.3)')}>
+                    {icon}
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
         </footer>
