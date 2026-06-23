@@ -752,8 +752,12 @@ export default function LandingPage() {
             flexDirection: 'column', padding: '0 clamp(28px, 6vw, 80px)',
           }}>
             <ScrollRevealQuote sectionRef={sectionRef}>
-              {"“The creators winning right now aren’t posting more. They’re posting smarter. I’ve reviewed thousands of creator accounts — the ones that grow all have one thing in common: they know exactly which hashtags are worth using.”"}
+              {"“The creators winning right now aren’t posting more. They’re posting smarter.”"}
             </ScrollRevealQuote>
+            <div style={{ marginTop: 40, textAlign: 'center' }}>
+              <p style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 15, fontWeight: 700, color: '#111111', letterSpacing: '-0.01em', marginBottom: 4 }}>Gary Vaynerchuk</p>
+              <p style={{ fontSize: 12, color: '#A1A1AA', letterSpacing: '0.01em' }}>Entrepreneur · Chairman of VaynerX</p>
+            </div>
 
           </div>
         </section>
