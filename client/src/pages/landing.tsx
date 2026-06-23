@@ -752,7 +752,7 @@ export default function LandingPage() {
             flexDirection: 'column', padding: '0 clamp(28px, 6vw, 80px)',
           }}>
             <ScrollRevealQuote sectionRef={sectionRef}>
-              {"“The creators winning right now aren’t posting more. They’re posting smarter.”"}
+              {"“The creators winning right now aren’t posting more. They’re posting smarter. I’ve reviewed thousands of creator accounts — the ones that grow all have one thing in common: they know exactly which hashtags are worth using.”"}
             </ScrollRevealQuote>
 
           </div>
