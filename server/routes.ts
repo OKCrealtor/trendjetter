@@ -585,6 +585,60 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ ...user, usage });
   });
 
+  // ── Hashtag Analyzer ──
+  app.post('/api/analyze', apiLimiter, async (req, res) => {
+    try {
+      const { hashtags } = req.body as { hashtags: string[] };
+      if (!Array.isArray(hashtags) || hashtags.length === 0) {
+        return res.status(400).json({ error: 'hashtags array required' });
+      }
+
+      // Resolve user if signed in (optional for public use)
+      const resolved = await resolveUser(req).catch(() => null);
+      let plan = 'anonymous';
+      if (resolved) {
+        const user = await storage.getUser(resolved.id);
+        plan = user?.plan ?? 'free';
+      }
+
+      // Tier limits: anonymous=1, free=5, pro/agency=30
+      const limits: Record<string, number> = { anonymous: 1, free: 5, pro: 30, agency: 30 };
+      const limit = limits[plan] ?? 1;
+      const trimmed = hashtags.slice(0, limit).map(h => h.startsWith('#') ? h : `#${h}`);
+
+      const prompt = `You are a hashtag intelligence engine. Analyze these hashtags and return ONLY valid JSON, no markdown.
+
+Hashtags to analyze: ${trimmed.join(', ')}
+
+For each hashtag return:
+- tag: the hashtag with #
+- popularityScore: 0-100 (how widely used)
+- competitionScore: 0-100 (how saturated — higher = harder to rank)
+- opportunityScore: 0-100 (growth potential — higher = better opportunity)
+- overallScore: 0-100 (weighted composite)
+- verdict: one of "Use Now" | "Rising Fast" | "Skip" | "Niche Gem" | "Oversaturated"
+- reason: one sentence explaining the verdict
+- trendDirection: "rising" | "stable" | "declining"
+
+Return JSON: { "results": [ { "tag", "popularityScore", "competitionScore", "opportunityScore", "overallScore", "verdict", "reason", "trendDirection" } ] }`;
+
+      const message = await anthropic.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+      });
+
+      const raw = (message.content[0] as any).text.trim();
+      const jsonStr = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+      const parsed = JSON.parse(jsonStr);
+
+      res.json({ ...parsed, plan, limit, analyzed: trimmed.length });
+    } catch (err: any) {
+      console.error('Analyze error:', err);
+      res.status(500).json({ error: 'Analysis failed', message: err.message });
+    }
+  });
+
   // ── Usage (lightweight, for generator pill) ──
   app.get('/api/usage', async (req, res) => {
     const resolved = await resolveUser(req);

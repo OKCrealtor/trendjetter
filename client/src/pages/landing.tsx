@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import TrendJetterLogo from '@/components/TrendJetterLogo';
 import { Link, useLocation } from 'wouter';
-import { Hash, Check, Zap, TrendingUp, MapPin, Target, Sparkles, Crown, ChevronDown, Menu, X, Building2 } from 'lucide-react';
+import { Hash, Check, Zap, TrendingUp, MapPin, Target, Sparkles, Crown, ChevronDown, Menu, X, Building2, ArrowRight, AlertTriangle, CheckCircle2, MinusCircle } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
 
 // ─── Lenis smooth scroll ──────────────────────────────────────────────────────
 // Initialised once at module level, destroyed on HMR via cleanup
@@ -437,6 +438,163 @@ function LandingPricingCard({ plan, annual }: { plan: typeof LANDING_PLANS[numbe
 }
 
 // ─── Landing Pricing Section (stateful toggle) ────────────────────────────────
+
+// ─── Landing Analyzer Embed ──────────────────────────────────────────────────
+function AnalyzerEmbed() {
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<null | { verdict: string; score: number; reason: string }>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const analyze = useCallback(async () => {
+    const tag = input.replace(/^#/, '').trim();
+    if (!tag) return;
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    try {
+      const data = await apiRequest('POST', '/api/analyze', { hashtags: [tag] }) as any;
+      const r = data.results?.[0];
+      if (r) setResult({ verdict: r.verdict, score: r.score ?? r.overallScore ?? 0, reason: r.reason ?? r.summary ?? '' });
+      else setError('No results returned.');
+    } catch (e: any) {
+      setError(e?.message ?? 'Something went wrong. Try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [input]);
+
+  const verdictColor = result?.verdict === 'Use Now'
+    ? '#059669'
+    : result?.verdict === 'Rising Fast'
+    ? '#0891B2'
+    : result?.verdict === 'Oversaturated' || result?.verdict === 'Skip'
+    ? '#DC2626'
+    : '#71717A';
+
+  const VerdictIcon = result?.verdict === 'Use Now'
+    ? CheckCircle2
+    : result?.verdict === 'Rising Fast'
+    ? TrendingUp
+    : result?.verdict === 'Oversaturated' || result?.verdict === 'Skip'
+    ? AlertTriangle
+    : MinusCircle;
+
+  return (
+    <section id="analyzer" style={{ padding: '80px 32px', background: '#FFFFFF', borderTop: '1px solid #E4E4E7' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center' }}>
+        <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0891B2', marginBottom: 12 }}>Free Tool</p>
+        <h2 style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 'clamp(26px,3vw,40px)', fontWeight: 800, letterSpacing: '-0.03em', color: '#111111', marginBottom: 12, lineHeight: 1.1 }}>
+          Is your hashtag worth using?
+        </h2>
+        <p style={{ fontSize: 15, color: '#71717A', marginBottom: 36, lineHeight: 1.6 }}>
+          Drop any hashtag below and get a verdict in seconds. No signup.
+        </p>
+
+        <div style={{ display: 'flex', gap: 8, maxWidth: 480, margin: '0 auto 24px' }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#A1A1AA', fontSize: 16, fontWeight: 600, pointerEvents: 'none' }}>#</span>
+            <input
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && analyze()}
+              placeholder="realestate"
+              maxLength={60}
+              style={{
+                width: '100%',
+                padding: '12px 14px 12px 28px',
+                border: '1px solid #E4E4E7',
+                borderRadius: 10,
+                fontSize: 15,
+                color: '#111111',
+                background: '#FAFAFA',
+                outline: 'none',
+                boxSizing: 'border-box' as const,
+                fontFamily: 'Inter, sans-serif',
+              }}
+            />
+          </div>
+          <button
+            onClick={analyze}
+            disabled={loading || !input.trim()}
+            style={{
+              padding: '12px 22px',
+              background: loading || !input.trim() ? '#D4D4D8' : '#111111',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: 10,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+              whiteSpace: 'nowrap' as const,
+              fontFamily: 'Inter, sans-serif',
+              transition: 'background 0.15s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            {loading ? (
+              <span style={{ width: 14, height: 14, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+            ) : null}
+            {loading ? 'Checking...' : 'Check it'}
+          </button>
+        </div>
+
+        {error && (
+          <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '12px 16px', color: '#DC2626', fontSize: 14, marginBottom: 16 }}>
+            {error}
+          </div>
+        )}
+
+        {result && (
+          <div
+            style={{
+              background: '#FAFAFA',
+              border: `1.5px solid ${verdictColor}33`,
+              borderRadius: 12,
+              padding: '24px 28px',
+              textAlign: 'left',
+              position: 'relative',
+              overflow: 'hidden',
+              marginBottom: 28,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <VerdictIcon size={20} color={verdictColor} strokeWidth={2.2} />
+              <span style={{ fontSize: 18, fontWeight: 800, color: verdictColor, fontFamily: 'Inter Tight, Inter, sans-serif', letterSpacing: '-0.02em' }}>
+                {result.verdict}
+              </span>
+              <span style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: '#111111', background: '#F4F4F5', padding: '4px 10px', borderRadius: 20 }}>
+                Score: {typeof result.score === 'number' ? Math.round(result.score) : result.score}/100
+              </span>
+            </div>
+            <p style={{ fontSize: 14, color: '#52525B', lineHeight: 1.6, margin: 0 }}>{result.reason}</p>
+          </div>
+        )}
+
+        <a
+          href="https://accounts.trendjetter.io/sign-up?redirect_url=https%3A%2F%2Fwww.trendjetter.io%2F%23%2Fanalyzer"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 14,
+            fontWeight: 600,
+            color: '#0891B2',
+            textDecoration: 'none',
+            fontFamily: 'Inter, sans-serif',
+          }}
+        >
+          Get 30 optimized hashtags <ArrowRight size={14} strokeWidth={2.2} />
+        </a>
+        <p style={{ fontSize: 12, color: '#A1A1AA', marginTop: 6 }}>No credit card needed. Free to start.</p>
+      </div>
+    </section>
+  );
+}
+
 function LandingPricingSection() {
   const [annual, setAnnual] = useState(false);
   return (
@@ -616,7 +774,7 @@ export default function LandingPage() {
             <TrendJetterLogo height={36} color="#111111" />
             {/* Desktop links */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 28 }} className="hide-mobile">
-              {(['Features','Pricing'] as const).map(label => (
+              {(['Features','Analyzer','Pricing'] as const).map(label => (
                 <a key={label} href={`#${label.toLowerCase()}`}
                   onClick={e => { e.preventDefault(); document.getElementById(label.toLowerCase())?.scrollIntoView({ behavior: 'smooth' }); }}
                   style={{ fontSize: 15, color: '#52525B', textDecoration: 'none', transition: 'color 0.15s' }}
@@ -645,7 +803,7 @@ export default function LandingPage() {
               padding: '16px 24px 20px',
               display: 'flex', flexDirection: 'column', gap: 4,
             }}>
-              {(['Features','Pricing'] as const).map(label => (
+              {(['Features','Analyzer','Pricing'] as const).map(label => (
                 <a key={label} href={`#${label.toLowerCase()}`}
                   onClick={e => { e.preventDefault(); setMenuOpen(false); document.getElementById(label.toLowerCase())?.scrollIntoView({ behavior: 'smooth' }); }}
                   style={{ fontSize: 16, color: '#111111', textDecoration: 'none', padding: '10px 0', borderBottom: '1px solid #F4F4F5' }}
@@ -820,6 +978,9 @@ export default function LandingPage() {
             </div>
           </div>
         </SpotlightSection>
+
+        {/* ── Analyzer ── */}
+        <AnalyzerEmbed />
 
         {/* ── Pricing ── */}
         <LandingPricingSection />

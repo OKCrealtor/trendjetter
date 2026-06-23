@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import {
   Hash, LayoutDashboard, TrendingUp, Bookmark,
-  FileText, ChevronRight, Menu, LogOut
+  FileText, ChevronRight, Menu, LogOut, Search
 } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useAuth, useUser, UserButton, SignOutButton, RedirectToSignIn } from '@clerk/clerk-react';
@@ -25,10 +25,12 @@ import SignUpPage      from '@/pages/sign-up';
 import PrivacyPage     from '@/pages/privacy';
 import TermsPage       from '@/pages/terms';
 import WelcomePage     from '@/pages/welcome';
+import AnalyzerPage   from '@/pages/analyzer';
 
 const NAV = [
   { href: '/dashboard',   label: 'Dashboard',  icon: LayoutDashboard },
   { href: '/generator',   label: 'Generate',   icon: Hash },
+  { href: '/analyzer',   label: 'Analyzer',   icon: Search },
   { href: '/trends',      label: 'Trends',     icon: TrendingUp },
   { href: '/collections', label: 'Collections',icon: Bookmark },
   { href: '/content',     label: 'Content',    icon: FileText },
@@ -204,6 +206,9 @@ export default function App() {
         </Route>
         <Route path="/welcome">
           <AuthGuard><WelcomePage /></AuthGuard>
+        </Route>
+        <Route path="/analyzer">
+          <AuthGuard><AppShell><AnalyzerPage /></AppShell></AuthGuard>
         </Route>
         <Route path="/privacy" component={PrivacyPage} />
         <Route path="/terms" component={TermsPage} />
