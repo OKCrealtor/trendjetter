@@ -142,12 +142,39 @@ function PlanCard({ plan, annual, loading, currentPlan, onUpgrade }: CardProps) 
 
       {/* Price */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-          <span style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 30, fontWeight: 800, color: textPri, letterSpacing: '-0.03em', lineHeight: 1 }}>
-            {displayPrice}
-          </span>
-          <span style={{ fontSize: 12, color: textSec, marginBottom: 1 }}>{displayPeriod}</span>
-        </div>
+        {plan.key === 'pro' ? (
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 15, fontWeight: 600,
+              color: '#A1A1AA', letterSpacing: '-0.02em', textDecoration: 'line-through' }}>
+              {annual ? '$23' : '$29'}
+            </span>
+            <span style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 30, fontWeight: 800, color: textPri, letterSpacing: '-0.03em', lineHeight: 1 }}>
+              {displayPrice}
+            </span>
+            <span style={{ fontSize: 12, color: textSec, marginBottom: 1 }}>{displayPeriod}</span>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+            <span style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 30, fontWeight: 800, color: textPri, letterSpacing: '-0.03em', lineHeight: 1 }}>
+              {displayPrice}
+            </span>
+            <span style={{ fontSize: 12, color: textSec, marginBottom: 1 }}>{displayPeriod}</span>
+          </div>
+        )}
+
+        {/* Founder seat bar — Pro only */}
+        {plan.key === 'pro' && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#0891B2' }}>⚡ 67 of 100 founder seats claimed</span>
+              <span style={{ fontSize: 10, color: '#A1A1AA' }}>or Jul 15</span>
+            </div>
+            <div style={{ height: 5, borderRadius: 999, background: '#E4E4E7', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: '67%', borderRadius: 999,
+                background: 'linear-gradient(90deg, #0891B2, #06B6D4)' }} />
+            </div>
+          </div>
+        )}
 
         {/* Annual note or "then" note */}
         {plan.key === 'trial' ? (
@@ -211,6 +238,11 @@ function PlanCard({ plan, annual, loading, currentPlan, onUpgrade }: CardProps) 
           </>
         )}
       </button>
+      {plan.key === 'pro' && !isCurrent && (
+        <p style={{ textAlign: 'center', fontSize: 11, color: '#A1A1AA', margin: 0 }}>
+          Price goes to $29 when seats fill
+        </p>
+      )}
     </div>
   );
 }

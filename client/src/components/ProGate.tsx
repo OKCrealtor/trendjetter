@@ -120,6 +120,24 @@ export default function ProGate({ children, isPaid, currentPlan = 'free', featur
               ))}
             </ul>
 
+            {/* Founder seat bar */}
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[11px] font-semibold" style={{ color: '#0891B2' }}>⚡ 67 of 100 founder seats claimed</span>
+                <span className="text-[10px]" style={{ color: '#A1A1AA' }}>or Jul 15</span>
+              </div>
+              <div className="h-[5px] rounded-full overflow-hidden" style={{ background: '#E4E4E7' }}>
+                <div className="h-full rounded-full" style={{ width: '67%', background: 'linear-gradient(90deg, #0891B2, #06B6D4)' }} />
+              </div>
+            </div>
+
+            {/* Strikethrough price + CTA */}
+            <div className="flex items-baseline gap-2 justify-center mb-3">
+              <span className="text-[14px] font-semibold line-through" style={{ color: '#A1A1AA' }}>$29/mo</span>
+              <span className="text-[20px] font-bold" style={{ color: '#111111', fontFamily: 'Inter Tight, Inter, sans-serif', letterSpacing: '-0.03em' }}>$19/mo</span>
+              <span className="text-[11px]" style={{ color: '#71717A' }}>founder rate</span>
+            </div>
+
             <button
               onClick={() => setShowUpgrade(true)}
               data-testid="progate-upgrade-btn"
@@ -127,11 +145,11 @@ export default function ProGate({ children, isPaid, currentPlan = 'free', featur
               style={{ background: '#111111', color: '#FFFFFF', fontFamily: 'Inter, sans-serif', letterSpacing: '-0.01em' }}
             >
               <Zap size={15} />
-              Upgrade to Pro — $19/mo
+              Claim Founder Seat
             </button>
 
-            <p className="text-center text-[11px] text-[#A1A1AA] mt-3">
-              Cancel anytime · Secure payment via Stripe
+            <p className="text-center text-[11px] text-[#A1A1AA] mt-2">
+              Price goes to $29 when seats fill
             </p>
           </div>
         </div>

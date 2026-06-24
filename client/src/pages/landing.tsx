@@ -393,14 +393,38 @@ function LandingPricingCard({ plan, annual }: { plan: typeof LANDING_PLANS[numbe
         <p style={{ fontSize: 11, color: textSec, margin: 0 }}>{plan.desc}</p>
       </div>
       <div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-          <span style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 30, fontWeight: 800,
-            color: textPri, letterSpacing: '-0.04em', lineHeight: 1 }}>{price}</span>
-          <span style={{ fontSize: 12, color: textSec }}>{period}</span>
-        </div>
+        {isPro ? (
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 16, fontWeight: 600,
+              color: '#A1A1AA', letterSpacing: '-0.02em', textDecoration: 'line-through' }}>
+              {annual ? '$23' : '$29'}
+            </span>
+            <span style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 30, fontWeight: 800,
+              color: '#111111', letterSpacing: '-0.04em', lineHeight: 1 }}>{price}</span>
+            <span style={{ fontSize: 12, color: textSec }}>{period}</span>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+            <span style={{ fontFamily: 'Inter Tight, Inter, sans-serif', fontSize: 30, fontWeight: 800,
+              color: textPri, letterSpacing: '-0.04em', lineHeight: 1 }}>{price}</span>
+            <span style={{ fontSize: 12, color: textSec }}>{period}</span>
+          </div>
+        )}
+        {isPro && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#0891B2' }}>⚡ 67 of 100 founder seats claimed</span>
+              <span style={{ fontSize: 10, color: '#A1A1AA' }}>or Jul 15</span>
+            </div>
+            <div style={{ height: 5, borderRadius: 999, background: '#E4E4E7', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: '67%', borderRadius: 999,
+                background: 'linear-gradient(90deg, #0891B2, #06B6D4)' }} />
+            </div>
+          </div>
+        )}
         {plan.key === 'trial' ? (
           <p style={{ fontSize: 11, color: textSec, marginTop: 4 }}>{plan.thenNote}</p>
-        ) : annual && plan.annualNote ? (
+        ) : !isPro && annual && plan.annualNote ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' as const }}>
             <span style={{ fontSize: 11, color: textSec }}>{plan.annualNote}</span>
             {plan.savings && (
@@ -409,6 +433,12 @@ function LandingPricingCard({ plan, annual }: { plan: typeof LANDING_PLANS[numbe
                 {plan.savings}
               </span>
             )}
+          </div>
+        ) : isPro && annual && plan.annualNote ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap' as const }}>
+            <span style={{ fontSize: 11, color: textSec }}>{plan.annualNote}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999,
+              background: 'rgba(8,145,178,0.1)', color: '#0891B2' }}>Save $48/yr</span>
           </div>
         ) : null}
       </div>
@@ -433,6 +463,11 @@ function LandingPricingCard({ plan, annual }: { plan: typeof LANDING_PLANS[numbe
       >
         {plan.cta}
       </MagneticBtn>
+      {isPro && (
+        <p style={{ textAlign: 'center', fontSize: 11, color: '#A1A1AA', margin: 0 }}>
+          Price goes to $29 when seats fill
+        </p>
+      )}
     </div>
   );
 }
