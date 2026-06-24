@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import {
   Hash, LayoutDashboard, TrendingUp, Bookmark,
-  FileText, ChevronRight, Menu, LogOut, Search
+  FileText, ChevronRight, Menu, LogOut, Search, BookOpen
 } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import { useAuth, useUser, UserButton, SignOutButton, RedirectToSignIn } from '@clerk/clerk-react';
@@ -35,6 +35,7 @@ const NAV = [
   { href: '/trends',      label: 'Trends',     icon: TrendingUp },
   { href: '/collections', label: 'Collections',icon: Bookmark },
   { href: '/content',     label: 'Content',    icon: FileText },
+  { href: '/blog',         label: 'Blog',       icon: BookOpen, external: true },
 ];
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -102,8 +103,27 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Nav links */}
         <nav className="flex-1 overflow-y-auto py-3 px-2">
-          {NAV.map(({ href, label, icon: Icon }) => {
-            const active = loc === href || loc.startsWith(href + '/');
+          {NAV.map(({ href, label, icon: Icon, external }: { href: string; label: string; icon: any; external?: boolean }) => {
+            const active = !external && (loc === href || loc.startsWith(href + '/'));
+
+            if (external) {
+              return (
+                <div key={href}>
+                  <div style={{ height: 1, background: '#E4E4E7', margin: '6px 8px 6px' }} />
+                  <a
+                    href={`/#${href}`}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-md text-[13.5px] font-medium transition-all duration-100 mb-0.5 no-underline text-[#71717A] hover:bg-[#F4F4F5] hover:text-[#111111]"
+                    style={{ letterSpacing: '-0.01em' }}
+                    data-testid={`nav-${href.slice(1)}`}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <Icon size={15} strokeWidth={1.8} />
+                    {label}
+                  </a>
+                </div>
+              );
+            }
+
             return (
               <Link key={href} href={href}>
                 <a
