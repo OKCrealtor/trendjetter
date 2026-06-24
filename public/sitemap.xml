@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
   <!-- Home / Landing -->
   <url>
@@ -18,7 +17,7 @@
     <priority>0.9</priority>
   </url>
 
-  <!-- Blog posts -->
+  <!-- Blog posts (17 total) -->
   <url>
     <loc>https://www.trendjetter.io/#/blog/how-many-hashtags-instagram-2026</loc>
     <lastmod>2026-06-23</lastmod>
@@ -49,14 +48,80 @@
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
-
-  <!-- App pages (hash-routed) -->
   <url>
-    <loc>https://www.trendjetter.io/#/dashboard</loc>
+    <loc>https://www.trendjetter.io/#/blog/hashtags-for-tiktok-by-niche</loc>
     <lastmod>2026-06-23</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.85</priority>
   </url>
+  <url>
+    <loc>https://www.trendjetter.io/#/blog/instagram-algorithm-2026</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.trendjetter.io/#/blog/tiktok-algorithm-2026</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.trendjetter.io/#/blog/linkedin-hashtag-strategy-2026</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.trendjetter.io/#/blog/hashtags-vs-keywords-social-media</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.trendjetter.io/#/blog/best-hashtags-for-small-business</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.trendjetter.io/#/blog/content-creator-growth-tips-2026</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.trendjetter.io/#/blog/how-to-go-viral-instagram-reels</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.trendjetter.io/#/blog/social-media-content-calendar-2026</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.trendjetter.io/#/blog/x-twitter-hashtag-strategy-2026</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.trendjetter.io/#/blog/why-realestate-hashtag-hurts-reach</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://www.trendjetter.io/#/blog/best-real-estate-hashtags-instagram-2026</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- App pages -->
   <url>
     <loc>https://www.trendjetter.io/#/generator</loc>
     <lastmod>2026-06-23</lastmod>

@@ -48,6 +48,9 @@ const CATEGORY_COLORS: Record<string, { bg: string; color: string }> = {
   'TikTok':         { bg: '#F0FDF4', color: '#166534' },
   'Creator Growth': { bg: '#EFF6FF', color: '#1E40AF' },
   'Strategy':       { bg: '#FFFBEB', color: '#92400E' },
+  'Real Estate':    { bg: '#F0F9FF', color: '#0C4A6E' },
+  'LinkedIn':       { bg: '#EFF6FF', color: '#1D4ED8' },
+  'X / Twitter':    { bg: '#F4F4F5', color: '#18181B' },
 };
 
 function CategoryBadge({ category }: { category: string }) {
