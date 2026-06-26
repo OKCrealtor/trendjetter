@@ -136,3 +136,22 @@ export type SearchResult = Search & {
     trending: Hashtag[];
   };
 };
+
+// Voice Profiles — brand voice for Content Assistant
+export const voiceProfiles = sqliteTable("voice_profiles", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().unique(),
+  samplePosts: text("sample_posts").notNull().default(""),
+  primaryPlatform: text("primary_platform").notNull().default("instagram"),
+  contentStyle: text("content_style").notNull().default("mix"),
+  audience: text("audience").notNull().default("general"),
+  vibeWord: text("vibe_word").notNull().default("real"),
+  voiceSummary: text("voice_summary"),
+  voiceTraits: text("voice_traits"), // JSON
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().default(new Date().toISOString()),
+});
+
+export const insertVoiceProfileSchema = createInsertSchema(voiceProfiles).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertVoiceProfile = z.infer<typeof insertVoiceProfileSchema>;
+export type VoiceProfile = typeof voiceProfiles.$inferSelect;

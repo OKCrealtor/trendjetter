@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Sparkles, Copy, Check, Hash, FileText, Calendar, Globe, Loader2, RefreshCw, ChevronDown } from 'lucide-react';
+import { Sparkles, Copy, Check, Hash, FileText, Calendar, Globe, Loader2, RefreshCw, ChevronDown, Mic2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { TiltCard } from '@/components/AppAnimations';
 import { useAuth } from '@clerk/clerk-react';
 import ProGate from '@/components/ProGate';
-import type { User } from '@shared/schema';
+import BrandVoiceModal from '@/components/BrandVoiceModal';
+import type { User, VoiceProfile } from '@shared/schema';
 
 interface ContentResult {
   caption: string;
@@ -111,6 +112,23 @@ export default function ContentPage() {
   const plan = user?.plan ?? (isSignedIn ? 'free' : 'anonymous');
   const isPaid = plan === 'pro' || plan === 'agency';
 
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
+  const [hasShownVoicePrompt, setHasShownVoicePrompt] = useState(false);
+
+  const { data: voiceData } = useQuery<{ profile: VoiceProfile | null }>({
+    queryKey: ['/api/brand-voice'],
+    enabled: !!isSignedIn && isPaid,
+  });
+  const voiceProfile = voiceData?.profile ?? null;
+
+  // Show modal on first visit if no voice profile
+  useState(() => {
+    if (isPaid && voiceData !== undefined && !voiceProfile && !hasShownVoicePrompt) {
+      setHasShownVoicePrompt(true);
+      setShowVoiceModal(true);
+    }
+  });
+
   const mutation = useMutation({
     mutationFn: () => apiRequest('POST', '/api/content', { topic, platform, industry, tone: tone.toLowerCase() }).then(r => r.json()),
     onSuccess: (data: ContentResult) => setResult(data),
@@ -132,13 +150,62 @@ export default function ContentPage() {
       ]}
     >
     <div className="p-8 max-w-3xl mx-auto">
+      {showVoiceModal && (
+        <BrandVoiceModal
+          onClose={() => setShowVoiceModal(false)}
+          onComplete={() => setShowVoiceModal(false)}
+        />
+      )}
+
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-[22px] font-bold text-[#111111] mb-1" style={{ fontFamily: 'Inter Tight, Inter, sans-serif', letterSpacing: '-0.025em' }}>Content Assistant</h1>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-[22px] font-bold text-[#111111]" style={{ fontFamily: 'Inter Tight, Inter, sans-serif', letterSpacing: '-0.025em' }}>Content Assistant</h1>
+            {voiceProfile && (
+              <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: 'rgba(8,145,178,0.1)', color: '#0891B2' }}>
+                Voice active
+              </span>
+            )}
+          </div>
           <p className="text-[14px] text-[#71717A]">AI-crafted captions, hashtags, SEO keywords, and posting schedules.</p>
         </div>
-        <span className="text-[11px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full bg-[#F4F4F5] text-[#52525B] border border-[#E4E4E7]">Pro</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowVoiceModal(true)}
+            data-testid="brand-voice-btn"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-[12px] font-medium transition-colors hover:opacity-80"
+            style={{
+              background: voiceProfile ? 'rgba(8,145,178,0.08)' : '#111111',
+              color: voiceProfile ? '#0891B2' : '#FFFFFF',
+              border: voiceProfile ? '1px solid rgba(8,145,178,0.2)' : 'none',
+            }}
+          >
+            <Mic2 size={12} />
+            {voiceProfile ? 'Edit voice' : 'Set up voice'}
+          </button>
+          <span className="text-[11px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full bg-[#F4F4F5] text-[#52525B] border border-[#E4E4E7]">Pro</span>
+        </div>
       </div>
+
+      {/* Voice profile nudge banner — shown when no profile set */}
+      {!voiceProfile && isPaid && (
+        <div
+          className="flex items-center justify-between p-4 rounded-xl mb-6 cursor-pointer"
+          style={{ background: '#F9F9F9', border: '1px solid #E4E4E7' }}
+          onClick={() => setShowVoiceModal(true)}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#111111' }}>
+              <Mic2 size={14} className="text-white" />
+            </div>
+            <div>
+              <p className="text-[13px] font-semibold text-[#111111]">Set up your brand voice</p>
+              <p className="text-[12px] text-[#71717A]">Paste a few posts and we will make every caption sound like you.</p>
+            </div>
+          </div>
+          <span className="text-[12px] font-semibold text-[#0891B2]">Set up now</span>
+        </div>
+      )}
 
       <TiltCard intensity={5}><div className="bento-tile p-6 space-y-5">
         <div>

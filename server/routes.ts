@@ -174,17 +174,22 @@ All tags start with #. No year numbers in hashtags. Use real hashtags creators a
   return parsed;
 }
 
-async function generateContentWithAI(topic: string, platform: string, industry: string, tone: string): Promise<{
+async function generateContentWithAI(topic: string, platform: string, industry: string, tone: string, voiceProfile?: any): Promise<{
   caption: string;
   hashtags: string[];
   seoKeywords: string[];
   postingSchedule: string;
 }> {
+  // Build voice context block if profile exists
+  const voiceBlock = voiceProfile?.voiceSummary
+    ? `\n\nBRAND VOICE PROFILE:\n${voiceProfile.voiceSummary}\nStyle: ${voiceProfile.contentStyle ?? 'mix'}, Vibe: ${voiceProfile.vibeWord ?? 'real'}\nPrimary platform: ${voiceProfile.primaryPlatform ?? platform}\nAudience: ${voiceProfile.audience ?? 'general'}\n\nWrite the caption to match this voice exactly. No em dashes. Short punchy sentences.`
+    : '';
+
   const prompt = `You are a social media content expert. Write a high-performing ${platform} post for:
 
 Topic: ${topic}
 Industry: ${industry.replace(/_/g, ' ')}
-Tone: ${tone}
+Tone: ${tone}${voiceBlock}
 
 Return ONLY valid JSON (no markdown):
 {
@@ -194,7 +199,7 @@ Return ONLY valid JSON (no markdown):
   "postingSchedule": "best times and frequency in 1-2 sentences"
 }
 
-Include 12-15 hashtags relevant to topic, industry, and ${platform}. Include 7 SEO keywords.`;
+Include 12-15 hashtags relevant to topic, industry, and ${platform}. Include 7 SEO keywords. Never use em dashes.`;
 
   const message = await anthropic.messages.create({
     model: 'claude-haiku-4-5',
@@ -815,10 +820,19 @@ Return JSON: { "results": [ { "tag", "popularityScore", "competitionScore", "opp
   app.post('/api/content', async (req, res) => {
     try {
       const body = contentSchema.parse(req.body);
+
+      // Fetch voice profile if user is authenticated
+      let voiceProfile: any = null;
+      const clerkId = req.headers['x-clerk-user-id'] as string;
+      if (clerkId) {
+        const u = await storage.getUserByClerkId(clerkId);
+        if (u) voiceProfile = await storage.getVoiceProfile(u.id);
+      }
+
       let content: { caption: string; hashtags: string[]; seoKeywords: string[]; postingSchedule: string };
       if (process.env.ANTHROPIC_API_KEY) {
         try {
-          content = await generateContentWithAI(body.topic, body.platform, body.industry, body.tone);
+          content = await generateContentWithAI(body.topic, body.platform, body.industry, body.tone, voiceProfile);
         } catch (aiErr: any) {
           console.warn('AI content generation failed, using static fallback:', aiErr.message);
           content = generateContent(body.topic, body.platform, body.industry, body.tone);
@@ -992,6 +1006,109 @@ Return JSON: { "results": [ { "tag", "popularityScore", "competitionScore", "opp
         }
       }
       res.json({ received: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Brand Voice routes ──────────────────────────────────────────────────────
+
+  app.get('/api/brand-voice', async (req, res) => {
+    try {
+      const clerkId = req.headers['x-clerk-user-id'] as string;
+      if (!clerkId) return res.json({ profile: null });
+      const user = await storage.getUserByClerkId(clerkId);
+      if (!user) return res.json({ profile: null });
+      const profile = await storage.getVoiceProfile(user.id);
+      res.json({ profile: profile ?? null });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/brand-voice', async (req, res) => {
+    try {
+      const clerkId = req.headers['x-clerk-user-id'] as string;
+      if (!clerkId) return res.status(401).json({ error: 'Unauthorized' });
+      const user = await storage.getUserByClerkId(clerkId);
+      if (!user) return res.status(401).json({ error: 'User not found' });
+
+      const { samplePosts, primaryPlatform, contentStyle, audience, vibeWord } = req.body;
+      if (!samplePosts || samplePosts.trim().length < 20) {
+        return res.status(400).json({ error: 'Please paste at least one post sample.' });
+      }
+
+      // Run Claude analysis to extract voice traits
+      const Anthropic = (await import('@anthropic-ai/sdk')).default;
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+      const analysisPrompt = `You are a brand voice analyst. Analyze these social media posts and extract the creator's unique voice.
+
+Posts:
+${samplePosts}
+
+Additional context:
+- Primary platform: ${primaryPlatform}
+- Content style: ${contentStyle}
+- Target audience: ${audience}
+- Creator describes their vibe as: "${vibeWord}"
+
+Respond with a JSON object with these exact keys:
+{
+  "summary": "2-3 sentence plain English description of their voice that could be used as a system prompt",
+  "hookStyle": "how they typically open posts (e.g. bold statement, question, story, stat)",
+  "sentenceLength": "short|medium|long|mixed",
+  "tone": "casual|professional|educational|inspirational|entertaining|mix",
+  "vocabularyLevel": "simple|conversational|technical",
+  "usesEmoji": true or false,
+  "ctaStyle": "how they end posts (e.g. direct ask, soft suggestion, question, none)",
+  "avoids": ["list of things they clearly don't do in their writing"]
+}
+
+Return ONLY the JSON object, no markdown.`;
+
+      const response = await anthropic.messages.create({
+        model: 'claude-opus-4-5',
+        max_tokens: 600,
+        messages: [{ role: 'user', content: analysisPrompt }],
+      });
+
+      let voiceTraits: any = {};
+      let voiceSummary = '';
+      try {
+        const raw = (response.content[0] as any).text.trim();
+        voiceTraits = JSON.parse(raw);
+        voiceSummary = voiceTraits.summary ?? '';
+      } catch {
+        voiceSummary = 'Voice profile saved. Will be applied to future content.';
+      }
+
+      const profile = await storage.upsertVoiceProfile({
+        userId: user.id,
+        samplePosts,
+        primaryPlatform: primaryPlatform ?? 'instagram',
+        contentStyle: contentStyle ?? 'mix',
+        audience: audience ?? 'general',
+        vibeWord: vibeWord ?? 'real',
+        voiceSummary,
+        voiceTraits: JSON.stringify(voiceTraits),
+      });
+
+      res.json({ profile, voiceTraits });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── DELETE brand voice profile ────────────────────────────────────────
+  app.post('/api/brand-voice/reset', async (req, res) => {
+    try {
+      const clerkId = req.headers['x-clerk-user-id'] as string;
+      if (!clerkId) return res.status(401).json({ error: 'Unauthorized' });
+      const user = await storage.getUserByClerkId(clerkId);
+      if (!user) return res.status(401).json({ error: 'User not found' });
+      await storage.deleteVoiceProfile(user.id);
+      res.json({ success: true });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

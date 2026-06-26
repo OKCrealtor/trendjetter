@@ -9,6 +9,7 @@ import type {
   CollectionTag, InsertCollectionTag,
   TrendRecord,
   ContentGeneration, InsertContentGeneration,
+  VoiceProfile, InsertVoiceProfile,
   SearchResult
 } from '@shared/schema';
 import supabase from './supabase';
@@ -53,6 +54,10 @@ export interface IStorage {
 
   createContentGeneration(gen: InsertContentGeneration): Promise<ContentGeneration>;
   getContentGenerationsByUser(userId: number, limit?: number): Promise<ContentGeneration[]>;
+
+  getVoiceProfile(userId: number): Promise<VoiceProfile | undefined>;
+  upsertVoiceProfile(profile: InsertVoiceProfile & { userId: number }): Promise<VoiceProfile>;
+  deleteVoiceProfile(userId: number): Promise<void>;
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -549,6 +554,60 @@ export class SupabaseStorage implements IStorage {
     if (error || !data) return [];
     return data.map(toContentGeneration);
   }
+
+  async getVoiceProfile(userId: number): Promise<VoiceProfile | undefined> {
+    const { data, error } = await supabase
+      .from('voice_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    if (error || !data) return undefined;
+    return toVoiceProfile(data);
+  }
+
+  async upsertVoiceProfile(profile: InsertVoiceProfile & { userId: number }): Promise<VoiceProfile> {
+    const { data, error } = await supabase
+      .from('voice_profiles')
+      .upsert({
+        user_id: profile.userId,
+        sample_posts: profile.samplePosts,
+        primary_platform: profile.primaryPlatform,
+        content_style: profile.contentStyle,
+        audience: profile.audience,
+        vibe_word: profile.vibeWord,
+        voice_summary: profile.voiceSummary ?? null,
+        voice_traits: profile.voiceTraits ?? null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
+      .select()
+      .single();
+    if (error || !data) throw new Error(`upsertVoiceProfile failed: ${error?.message}`);
+    return toVoiceProfile(data);
+  }
+
+  async deleteVoiceProfile(userId: number): Promise<void> {
+    const { error } = await supabase
+      .from('voice_profiles')
+      .delete()
+      .eq('user_id', userId);
+    if (error) throw new Error(`deleteVoiceProfile failed: ${error.message}`);
+  }
+}
+
+function toVoiceProfile(row: any): VoiceProfile {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    samplePosts: row.sample_posts ?? '',
+    primaryPlatform: row.primary_platform ?? 'instagram',
+    contentStyle: row.content_style ?? 'mix',
+    audience: row.audience ?? 'general',
+    vibeWord: row.vibe_word ?? 'real',
+    voiceSummary: row.voice_summary ?? null,
+    voiceTraits: row.voice_traits ?? null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 export const storage = new SupabaseStorage();

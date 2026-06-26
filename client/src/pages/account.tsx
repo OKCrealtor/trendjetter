@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CreditCard, Bell, Shield, Key, LogOut, ChevronRight, Check, ArrowRight, ExternalLink, Zap, Building2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import BrandVoiceSettings from '@/components/BrandVoiceSettings';
 import type { User as UserType } from '@shared/schema';
 
 // ── Price IDs ────────────────────────────────────────────────────────────────
@@ -353,6 +354,9 @@ export default function AccountPage() {
         <PlanCard planKey="pro"    currentPlan={plan} annual={annual} />
         <PlanCard planKey="agency" currentPlan={plan} annual={annual} />
       </div>
+
+      {/* ── Brand Voice (Pro only) ── */}
+      {isPaid && <BrandVoiceSettings />}
 
       {/* ── Settings ── */}
       <div className="bento-tile p-5 mb-4">
