@@ -245,7 +245,9 @@ export class SupabaseStorage implements IStorage {
     }
     const newUser = await this.createUser({ email, name, plan: 'free', searchesThisMonth: 0, clerkId } as any);
     // Fire welcome email asynchronously — never block sign-up
-    sendWelcomeEmail(email, name).catch(() => {});
+    sendWelcomeEmail(email, name)
+      .then(() => this.markWelcomeSent(newUser.id))
+      .catch(() => {});
     return newUser;
   }
 
@@ -637,6 +639,56 @@ export class SupabaseStorage implements IStorage {
       .delete()
       .eq('user_id', userId);
     if (error) throw new Error(`deleteVoiceProfile failed: ${error.message}`);
+  }
+
+  // ── Email drip tracking ───────────────────────────────────────────────────
+  async markWelcomeSent(userId: number): Promise<void> {
+    await supabase.from('users').update({ welcome_sent_at: new Date().toISOString() }).eq('id', userId);
+  }
+
+  async sendDripEmails(): Promise<{ day3: number; day7: number }> {
+    const { sendDay3Email, sendDay7Email } = await import('./email');
+    const now = new Date();
+
+    // Day 3: signed up 3+ days ago, day3 not sent yet, welcome was sent
+    const day3Cutoff = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: day3Users } = await supabase
+      .from('users')
+      .select('id, email, name')
+      .not('welcome_sent_at', 'is', null)
+      .is('day3_sent_at', null)
+      .lt('created_at', day3Cutoff)
+      .limit(50);
+
+    let day3Count = 0;
+    for (const u of day3Users ?? []) {
+      if (!u.email) continue;
+      await sendDay3Email(u.email, u.name ?? u.email.split('@')[0]);
+      await supabase.from('users').update({ day3_sent_at: now.toISOString() }).eq('id', u.id);
+      day3Count++;
+    }
+
+    // Day 7: signed up 7+ days ago, day7 not sent yet, on free plan
+    const day7Cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: day7Users } = await supabase
+      .from('users')
+      .select('id, email, name, plan')
+      .not('welcome_sent_at', 'is', null)
+      .is('day7_sent_at', null)
+      .lt('created_at', day7Cutoff)
+      .eq('plan', 'free')
+      .limit(50);
+
+    let day7Count = 0;
+    for (const u of day7Users ?? []) {
+      if (!u.email) continue;
+      await sendDay7Email(u.email, u.name ?? u.email.split('@')[0]);
+      await supabase.from('users').update({ day7_sent_at: now.toISOString() }).eq('id', u.id);
+      day7Count++;
+    }
+
+    console.log(`[drip] day3=${day3Count} day7=${day7Count}`);
+    return { day3: day3Count, day7: day7Count };
   }
 }
 

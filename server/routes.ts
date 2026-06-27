@@ -5,6 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import Stripe from 'stripe';
 import rateLimit from 'express-rate-limit';
 import { storage } from './storage';
+import { sendDay3Email, sendDay7Email } from './email';
 import { insertSearchSchema, insertCollectionSchema, insertCollectionTagSchema, insertContentGenerationSchema } from '@shared/schema';
 import type { InsertHashtag } from '@shared/schema';
 import { z } from 'zod';
@@ -1174,6 +1175,22 @@ Return ONLY the JSON object, no markdown.`;
       });
 
       res.json({ profile, voiceTraits });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Email drip cron ─────────────────────────────────────────────────
+  // Called daily by Vercel cron. Sends day-3 and day-7 drip emails.
+  app.post('/api/cron/drip', async (req, res) => {
+    // Simple shared secret to prevent public triggering
+    const secret = req.headers['x-cron-secret'];
+    if (secret !== process.env.CRON_SECRET) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    try {
+      const sent = await storage.sendDripEmails();
+      res.json({ success: true, ...sent });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
