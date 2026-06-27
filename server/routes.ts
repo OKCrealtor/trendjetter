@@ -768,9 +768,14 @@ Return JSON: { "results": [ { "tag", "popularityScore", "competitionScore", "opp
 
   // ── Trends ──
   app.get('/api/trends', async (req, res) => {
-    const { platform, industry, city } = req.query as Record<string, string>;
-    const trends = await storage.getTrends(platform, industry, city);
-    res.json(trends);
+    try {
+      const { platform, industry, city } = req.query as Record<string, string>;
+      const trends = await storage.getTrends(platform, industry, city);
+      res.json(trends ?? []);
+    } catch (err: any) {
+      console.error('getTrends error:', err.message);
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // ── Collections ──
