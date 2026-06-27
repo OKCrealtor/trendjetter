@@ -767,13 +767,51 @@ Return JSON: { "results": [ { "tag", "popularityScore", "competitionScore", "opp
   });
 
   // ── Trends ──
+  const { refreshTrends, INDUSTRY_KEYWORDS } = await import('./trendRefresh');
+  const CACHE_HOURS = 24;
+
   app.get('/api/trends', async (req, res) => {
     try {
-      const { platform, industry, city } = req.query as Record<string, string>;
+      const platform = (req.query.platform as string) || 'instagram';
+      const industry = (req.query.industry as string) || 'general';
+      const city     = req.query.city as string | undefined;
+
+      // Check cache freshness
+      const lastRefresh = await storage.getTrendsAge(platform, industry);
+      const ageMs = lastRefresh ? Date.now() - lastRefresh.getTime() : Infinity;
+      const stale = ageMs > CACHE_HOURS * 60 * 60 * 1000;
+
+      // Kick off background refresh if stale (don't block)
+      if (stale && INDUSTRY_KEYWORDS[industry]) {
+        refreshTrends(platform, industry).catch(e =>
+          console.error('refreshTrends background error:', e.message)
+        );
+      }
+
       const trends = await storage.getTrends(platform, industry, city);
-      res.json(trends ?? []);
+      res.json({
+        trends: trends ?? [],
+        lastRefreshed: lastRefresh ?? null,
+        refreshing: stale,
+      });
     } catch (err: any) {
       console.error('getTrends error:', err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Manual trend refresh (Pro+) ──
+  app.post('/api/trends/refresh', async (req, res) => {
+    try {
+      const resolved = await resolveUser(req);
+      if (!resolved) return res.status(401).json({ error: 'Unauthorized' });
+      const effectivePlan = await getEffectivePlan(resolved.id);
+      if (effectivePlan === 'free') return res.status(403).json({ error: 'Pro required' });
+      const { platform = 'instagram', industry = 'general' } = req.body;
+      await refreshTrends(platform, industry);
+      const trends = await storage.getTrends(platform, industry);
+      res.json({ trends, lastRefreshed: new Date(), refreshing: false });
+    } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
   });

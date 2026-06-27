@@ -51,6 +51,8 @@ export interface IStorage {
   removeTagFromCollection(id: number): Promise<void>;
 
   getTrends(platform?: string, industry?: string, city?: string): Promise<TrendRecord[]>;
+  getTrendsAge(platform: string, industry: string): Promise<Date | null>;
+  upsertTrendBatch(records: Omit<TrendRecord, 'id' | 'createdAt'>[]): Promise<void>;
 
   createContentGeneration(gen: InsertContentGeneration): Promise<ContentGeneration>;
   getContentGenerationsByUser(userId: number, limit?: number): Promise<ContentGeneration[]>;
@@ -521,6 +523,43 @@ export class SupabaseStorage implements IStorage {
     const { data, error } = await query;
     if (error || !data) return [];
     return data.map(toTrendRecord);
+  }
+
+  async getTrendsAge(platform: string, industry: string): Promise<Date | null> {
+    const { data, error } = await supabase
+      .from('trend_records')
+      .select('refreshed_at')
+      .eq('platform', platform)
+      .eq('industry', industry)
+      .order('refreshed_at', { ascending: false })
+      .limit(1)
+      .single();
+    if (error || !data) return null;
+    return new Date((data as any).refreshed_at);
+  }
+
+  async upsertTrendBatch(records: Omit<TrendRecord, 'id' | 'createdAt'>[]): Promise<void> {
+    // Delete existing records for this platform+industry combo then insert fresh
+    if (records.length === 0) return;
+    const { platform, industry } = records[0];
+    await supabase
+      .from('trend_records')
+      .delete()
+      .eq('platform', platform)
+      .eq('industry', industry ?? '');
+    const rows = records.map(r => ({
+      tag: r.tag,
+      platform: r.platform,
+      industry: r.industry ?? null,
+      trend_score: r.trendScore,
+      velocity: r.velocity ?? null,
+      estimated_posts: r.estimatedPosts ?? null,
+      location_city: r.locationCity ?? null,
+      location_state: r.locationState ?? null,
+      refreshed_at: new Date().toISOString(),
+    }));
+    const { error } = await supabase.from('trend_records').insert(rows);
+    if (error) throw new Error(`upsertTrendBatch failed: ${error.message}`);
   }
 
   // ── Content Generations ────────────────────────────────────────────────────

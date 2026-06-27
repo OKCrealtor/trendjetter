@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Link } from 'wouter';
-import { TrendingUp, Hash, ArrowUpRight, Copy, Check, ChevronDown, ChevronUp, Flame, AlertTriangle } from 'lucide-react';
+import { TrendingUp, Hash, ArrowUpRight, Copy, Check, ChevronDown, ChevronUp, Flame, AlertTriangle, RefreshCw } from 'lucide-react';
+import { queryClient } from '@/lib/queryClient';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiRequest } from '@/lib/queryClient';
 import type { TrendRecord } from '@shared/schema';
@@ -178,9 +179,31 @@ export default function TrendsPage() {
   if (platform !== 'All') params.set('platform', platform.toLowerCase());
   if (industry !== 'All') params.set('industry', industry.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_'));
 
-  const { data: trends, isLoading } = useQuery<TrendRecord[]>({
+  const { data: trendsData, isLoading } = useQuery<{ trends: TrendRecord[]; lastRefreshed: string | null; refreshing: boolean }>({
     queryKey: ['/api/trends', platform, industry],
     queryFn: () => apiRequest('GET', `/api/trends?${params}`).then(r => r.json()),
+    refetchInterval: (data) => data?.refreshing ? 8000 : false,
+  });
+
+  const trends       = trendsData?.trends ?? [];
+  const lastRefreshed = trendsData?.lastRefreshed ? new Date(trendsData.lastRefreshed) : null;
+  const isRefreshing  = trendsData?.refreshing ?? false;
+
+  function formatAge(d: Date | null) {
+    if (!d) return null;
+    const hours = Math.round((Date.now() - d.getTime()) / 3600000);
+    if (hours < 1) return 'Updated just now';
+    if (hours < 24) return `Updated ${hours}h ago`;
+    const days = Math.round(hours / 24);
+    return `Updated ${days}d ago`;
+  }
+
+  const refreshMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/trends/refresh', {
+      platform: platform !== 'All' ? platform.toLowerCase() : 'instagram',
+      industry: industry !== 'All' ? industry.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_') : 'general',
+    }).then(r => r.json()),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/trends'] }),
   });
 
   return (
@@ -193,11 +216,32 @@ export default function TrendsPage() {
             style={{ fontFamily: 'Inter Tight, Inter, sans-serif', letterSpacing: '-0.025em' }}>
             Trending Hashtags
           </h1>
-          <p className="text-[14px] text-[#71717A]">What's gaining momentum this week.</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[14px] text-[#71717A]">What's gaining momentum right now.</p>
+            {isRefreshing && (
+              <span className="flex items-center gap-1 text-[11px] text-[#0891B2] font-medium">
+                <RefreshCw size={10} className="animate-spin" /> Refreshing data...
+              </span>
+            )}
+            {!isRefreshing && lastRefreshed && (
+              <span className="text-[11px] text-[#A1A1AA]">{formatAge(lastRefreshed)}</span>
+            )}
+          </div>
         </div>
-        <Link href="/generator">
-          <a className="no-underline btn-primary text-[13px]">Generate for me</a>
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            data-testid="button-refresh-trends"
+            onClick={() => refreshMutation.mutate()}
+            disabled={refreshMutation.isPending}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E4E4E7] text-[12px] font-medium text-[#52525B] hover:border-[#A1A1AA] hover:text-[#111111] transition-all cursor-pointer disabled:opacity-40"
+          >
+            <RefreshCw size={12} className={refreshMutation.isPending ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+          <Link href="/generator">
+            <a className="no-underline btn-primary text-[13px]">Generate for me</a>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
