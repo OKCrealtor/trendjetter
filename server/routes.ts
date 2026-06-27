@@ -581,7 +581,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   }
 
   // ── Demo accounts — always return agency plan regardless of DB ──
-  const DEMO_EMAILS = ['demo@trendjetter.io'];
+  const DEMO_EMAILS = ['demo@trendjetter.io', 'hi@trendjetter.io'];
 
   async function getEffectivePlan(userId: number): Promise<string> {
     const user = await storage.getUser(userId);
